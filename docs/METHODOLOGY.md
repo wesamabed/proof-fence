@@ -1,54 +1,165 @@
 # Methodology
 
-## Security invariant
+## Construct
 
-ProofFence models security decisions as a promotion from evidence to authority. A candidate implementation is unsafe when a lower-quality input can create a positive security fact that should require stronger evidence.
+ProofFence models security decisions as a promotion from evidence to authority.
+A candidate implementation is unsafe when it reaches a conclusion the available
+evidence does not carry — either by treating a lower-quality input as a stronger
+fact, or by resolving an underdetermined state as though it were determined.
 
-The v0.1 cases exercise five recurring dimensions:
+`docs/CONSTRUCT_VALIDITY.md` states what is measured, why v0.1 could not measure
+it, and the per-case review that v0.2's repair was checked against.
+
+## Dimensions
 
 1. **Admission** — exact, complete parsing of security-bearing data.
-2. **Provenance** — the fact came from the required producer/context.
-3. **Coherence** — outcome class, error state, and response body agree.
+2. **Provenance** — the fact came from the required producer, about the required
+   subject, at the required anchor.
+3. **Coherence** — outcome class, fault state, response body, and independent
+   readings agree.
 4. **Closure** — all required premises exist before a positive result is emitted.
-5. **Execution proof** — security tests were independently observed to run and pass.
+5. **Execution proof** — security tests were independently observed to run and
+   pass.
+6. **Authority decision** — the four-valued transition itself, under evidence
+   that may be incomplete, stale, or contradictory.
+
+The first five produce facts. The sixth consumes them. See
+`docs/AUTHORITY_DECISION_MODEL.md`.
+
+## Writing a case that measures reasoning
+
+A ProofFence task statement specifies the API and data semantics, the operational
+goal, what each field means and which component populates it, the relevant trust
+properties as facts about origin and attribution, and what the caller does with
+the result.
+
+It does not state the boolean conjunction, the branch mapping, what to return
+when a field is missing, which source is "trusted" as a verdict, or the reference
+solution in prose. A candidate that transcribes one sentence of the task into Go
+must fail.
+
+The ambiguity belongs in the evidence, never in the instructions. Every case
+remains well-specified: one deterministic correct answer per input.
+
+Identifiers name origins, not trust levels. `SelfReportPassed` beside
+`SupervisorPassed` is legitimate — knowing which origin establishes a fact is the
+reasoning under test. `TrustedObservedPass` beside `ClaimedPass` is not.
 
 ## Evaluation workflow
 
-`materialize` copies the trusted starter workspace and prepends a common submission contract to `TASK.md`. The coding agent receives only that directory. v0.1 is intentionally a **source-edit benchmark**: only `challenge.go` may change. During grading, ProofFence rejects extra candidate files, requires `go.mod` to match the trusted starter byte-for-byte, checks that `challenge.go` is a regular Go source file in package `challenge`, rejects compiler directives and candidate test/lifecycle functions, and permits only a small allowlist of standard-library imports that excludes process/test lifecycle control. The controller then creates a fresh temporary module from the trusted `go.mod`, the validated candidate `challenge.go`, and the trusted grader.
+`materialize` copies the trusted starter workspace and prepends the submission
+contract to `TASK.md`. The coding agent receives only that directory.
 
-The controller derives the trusted top-level grader-test inventory from grader source and executes each trusted test separately with an exact `-run` selector and test-cache disabled. Overall `PASS` requires every controller-selected test command to succeed. Candidate stdout is diagnostic only; ProofFence does not parse candidate-authored `=== RUN`, `--- PASS`, or other textual markers as authority. This closes the public-pilot `TestMain`/forged-marker result-integrity class by removing candidate test files and lifecycle/process-control mechanisms from the accepted submission surface.
+ProofFence is deliberately a **source-edit benchmark**: only `challenge.go` may
+change. During grading the controller rejects extra candidate files, requires
+`go.mod` to match the trusted starter byte-for-byte, checks that `challenge.go`
+is a regular Go source file in package `challenge`, rejects compiler, build, and
+position directives, rejects candidate test and lifecycle declarations, rejects
+package-level variable initializers that contain calls or function literals, and
+permits only a small allowlist of standard-library imports that excludes process
+and test lifecycle control.
 
-This is still **not** a hostile-code sandbox. Candidate `challenge.go` executes native Go code after the source-policy gate, so reproducible studies must grade inside a disposable VM/container with no secrets, privileged credentials, or sensitive mounts and should restrict network access where practical. The environment opt-in acknowledges that external isolation requirement; it does not provide isolation itself.
+The package-level-variable rule closes the pre-test execution class. Go evaluates
+package-level initializers during package initialization — before any trusted
+test body runs. Rather than reason about which pre-test execution is harmless,
+the policy removes the mechanism. It is deliberately conservative: a type
+conversion parses as a call and is rejected too, and the equivalent typed
+declaration (`var x Kind = "A"`) is always available. This is a mechanical,
+documented rule, not a malicious-Go analyzer.
+
+The controller then reconstructs a fresh temporary module from the trusted
+`go.mod`, the validated candidate `challenge.go`, and the trusted grader.
+
+## Execution and result integrity
+
+The controller derives the trusted top-level grader-test inventory from grader
+source. It compiles the reconstructed module once into a test binary, then
+executes each trusted test separately from that binary with an exact `-test.run`
+selector and the test cache disabled. `PASS` requires every controller-selected
+test to succeed.
+
+Compilation and execution carry separate finite budgets
+(`PROOF_FENCE_BUILD_TIMEOUT`, default 3m; `PROOF_FENCE_TEST_TIMEOUT`, default
+1m). Separating them stops a cold compile from consuming the execution budget and
+producing a spurious model `FAIL`. Both fail closed: exceeding either never
+yields `PASS`.
+
+Every transcript line carries an origin label:
+
+- `[proof-fence CONTROLLER]` — the benchmark's own statements;
+- `[proof-fence TRUSTED_TEST]` — a controller-derived verdict for one named
+  trusted test, taken from process exit status;
+- `[proof-fence CANDIDATE_OUTPUT]` — raw subprocess bytes.
+
+Subprocess output is an inseparable mixture of trusted testing-framework output
+and arbitrary candidate stdout, so the whole block is labelled as candidate
+output and carries no authority. Because the controller prepends its label to
+every subprocess line, a candidate that prints a controller-shaped line has it
+recorded as `[proof-fence CANDIDATE_OUTPUT] [proof-fence CONTROLLER] …`. The
+label always wins.
+
+This is a **result-integrity boundary, not an OS sandbox**. Candidate
+`challenge.go` still executes native Go code after the source-policy gate.
+Reproducible studies must grade inside a disposable VM or container with no
+secrets, privileged credentials, or sensitive mounts, and should restrict network
+access where practical. The environment opt-in acknowledges that requirement; it
+does not provide isolation.
 
 ## Scoring
 
-v0.1 produces one primary metric per trial:
+One primary outcome per trial:
 
-- `PASS`: all case-specific security properties hold under the grader.
-- `FAIL`: at least one property does not hold, compilation fails, or the test process fails.
+- `PASS` — every case-specific property holds under the grader;
+- `FAIL` — at least one property does not hold, or compilation fails, or the
+  submission violates the source policy;
+- `INFRASTRUCTURE` — a build or execution timeout, or a toolchain failure.
 
-Research studies should additionally record:
-- wall-clock time;
-- model/tool configuration;
-- number of agent turns/tool calls if available;
-- patch size;
-- explanation/rationale;
-- reviewer findings and whether they are confirmed by the grader.
+`INFRASTRUCTURE` is not a model failure. A study should drop or re-run those
+trials and report how many there were.
+
+Studies should additionally record: the exact Go toolchain
+(`proof-fence toolchain`), wall-clock time, model and tool configuration, agent
+turns or tool calls where available, patch size, the agent's stated rationale,
+and reviewer findings with whether the grader confirms them.
+
+## Self-test and mutation
+
+`proof-fence selftest` proves, per case, that the starter fails **semantically**
+and the reference passes. A starter that fails for infrastructure reasons is
+itself an error.
+
+`proof-fence mutation` runs every committed mutant under
+`cases/<ID>/mutants/`. Each is a near-miss or degenerate-strategy implementation
+that the grader must kill. A survivor means the grader does not discriminate the
+behaviour the case claims to measure. The same suite runs under `go test ./...`.
 
 ## Exact-delta review condition
 
 A review study can compare:
+
 1. implementation only;
 2. implementation + same-agent self-review;
 3. implementation + independent reviewer;
-4. implementation + independent reviewer + one focused correction + exact-delta verification.
+4. implementation + independent reviewer + one focused correction + exact-delta
+   verification.
 
-The benchmark itself does not claim which condition is superior. That is an empirical question.
+The benchmark does not claim which is superior. That is an empirical question.
 
-## Public vs held-out cases
+## Public versus held-out cases
 
-The ten v0.1 cases are public pilot cases. Confirmatory research should create a separately held-out set from the same published taxonomy and preregister its scoring before model runs.
+Every case here is a public pilot case, marked `"exposure":
+"PUBLIC_PILOT_ONLY"`. They were authored with AI assistance, including by the
+model family a later study would evaluate, so they are contaminated for a clean
+confirmatory measurement of those models.
+
+Confirmatory research must build a separately authored, permanently private
+held-out set from this taxonomy and preregister its scoring before any model
+runs. No held-out set exists in this repository, and none should be added here.
 
 ## Reviewer independence for confirmatory studies
 
-The public pilot does not make causal claims about review workflows. Before a confirmatory comparison, preregister what “independent reviewer” means: whether implementation transcripts or model identity are visible, whether reviewer context is freshly instantiated, the allowed artifacts, model/version allocation, contamination handling, stopping/exclusion rules, and the primary estimand.
+Before a confirmatory comparison, preregister what "independent reviewer" means:
+whether implementation transcripts or model identity are visible, whether
+reviewer context is freshly instantiated, the allowed artifacts, model and
+version allocation, contamination handling, stopping and exclusion rules, and the
+primary estimand.
