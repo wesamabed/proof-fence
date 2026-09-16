@@ -3,6 +3,7 @@ package bench
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -40,6 +41,24 @@ func TestMaterializeRejectsExistingDestination(t *testing.T) {
 	}
 }
 
+func TestMaterializeDeclaresSourceEditBoundary(t *testing.T) {
+	root, _ := FindRepoRoot("")
+	d := filepath.Join(t.TempDir(), "candidate")
+	if err := Materialize(root, "PF-001", d); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(d, "TASK.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(b)
+	for _, want := range []string{"Modify only challenge.go", "Do not add files", "Do not", "modify go.mod"} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("TASK.md missing submission-boundary text %q:\n%s", want, s)
+		}
+	}
+}
+
 func TestGradeRejectsCandidateTestMainBypass(t *testing.T) {
 	root, _ := FindRepoRoot("")
 	d := filepath.Join(t.TempDir(), "candidate")
@@ -54,8 +73,73 @@ func TestMain(m *testing.M) { os.Exit(0) }
 		t.Fatal(err)
 	}
 	out, err := gradeUnsandboxed(root, "PF-001", d)
+	if err == nil || !strings.Contains(err.Error(), "unexpected candidate path") {
+		t.Fatalf("TestMain bypass was not rejected at the submission boundary: out=%q err=%v", out, err)
+	}
+}
+
+func TestGradeRejectsCandidateLifecycleImport(t *testing.T) {
+	root, _ := FindRepoRoot("")
+	d := filepath.Join(t.TempDir(), "candidate")
+	if err := Materialize(root, "PF-004", d); err != nil {
+		t.Fatal(err)
+	}
+	src := `package challenge
+import "os"
+type Outcome string
+const(Succeeded Outcome="SUCCEEDED";Denied Outcome="DENIED";Failed Outcome="FAILED")
+type DeleteEvidence struct{Outcome Outcome;ErrorCode string;ResponseDeleted bool}
+func init(){os.Exit(0)}
+func DeletionComplete(e DeleteEvidence)bool{return true}
+`
+	if err := os.WriteFile(filepath.Join(d, "challenge.go"), []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := gradeUnsandboxed(root, "PF-004", d)
+	if err == nil || !strings.Contains(err.Error(), `import "os"`) {
+		t.Fatalf("candidate process-control source was not rejected: out=%q err=%v", out, err)
+	}
+}
+
+func TestGradeDoesNotTrustCandidateOutputMarkers(t *testing.T) {
+	root, _ := FindRepoRoot("")
+	d := filepath.Join(t.TempDir(), "candidate")
+	if err := Materialize(root, "PF-004", d); err != nil {
+		t.Fatal(err)
+	}
+	src := `package challenge
+import "fmt"
+type Outcome string
+const(Succeeded Outcome="SUCCEEDED";Denied Outcome="DENIED";Failed Outcome="FAILED")
+type DeleteEvidence struct{Outcome Outcome;ErrorCode string;ResponseDeleted bool}
+var _ = func() int {
+ fmt.Println("=== RUN   TestDeniedCannotBeSuccess")
+ fmt.Println("--- PASS: TestDeniedCannotBeSuccess (0.00s)")
+ return 0
+}()
+func DeletionComplete(e DeleteEvidence)bool{return true}
+`
+	if err := os.WriteFile(filepath.Join(d, "challenge.go"), []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := gradeUnsandboxed(root, "PF-004", d)
 	if err == nil {
-		t.Fatalf("TestMain bypass unexpectedly passed:\n%s", out)
+		t.Fatalf("forged output markers influenced result authority:\n%s", out)
+	}
+}
+
+func TestGradeRejectsModifiedGoMod(t *testing.T) {
+	root, _ := FindRepoRoot("")
+	d := filepath.Join(t.TempDir(), "candidate")
+	if err := Materialize(root, "PF-001", d); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(d, "go.mod"), []byte("module attacker.invalid\n\ngo 1.23\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := gradeUnsandboxed(root, "PF-001", d)
+	if err == nil || !strings.Contains(err.Error(), "go.mod differs") {
+		t.Fatalf("modified go.mod was not rejected: out=%q err=%v", out, err)
 	}
 }
 

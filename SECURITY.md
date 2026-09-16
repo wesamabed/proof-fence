@@ -16,4 +16,8 @@ Synthetic cases and fixes to the public benchmark are welcome through normal pul
 
 ## Result-integrity boundary
 
-The grader does not trust candidate stdout or a zero test-process exit on its own. It runs `go test -json .` and independently requires every trusted top-level grader test to emit both `run` and `pass` events without `fail` or `skip`. This blocks early-success `TestMain` suppression of the trusted assertions. It does not make same-process Go execution a sandbox; disposable external isolation remains mandatory for untrusted candidates.
+ProofFence v0.1 deliberately uses a narrow source-edit submission model. Before any candidate code executes, the controller accepts only a regular `challenge.go`, requires the candidate `go.mod` to remain byte-identical to the trusted starter, rejects extra files (including candidate `_test.go` files), rejects compiler directives and test/lifecycle declarations, and permits only a small documented set of non-process-control standard-library imports. The controller then reconstructs the module from trusted inputs and overlays the trusted grader.
+
+Each trusted top-level grader test is selected and executed separately with `go test -count=1 -run '^<trusted-name>$'`. PASS is derived only from successful execution of every controller-selected trusted test. Candidate stdout is never parsed as test authority, so forged `=== RUN` / `--- PASS` markers cannot create a pass.
+
+This source policy is a **benchmark result-integrity boundary**, not an OS sandbox. Candidate `challenge.go` still executes native Go code. Continue to grade inside a disposable VM/container with no secrets, privileged credentials, or sensitive mounts and restrict network access where practical.

@@ -1,7 +1,8 @@
 package bench
 
 import (
-	"bufio"
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,8 +14,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Case struct {
@@ -119,6 +123,15 @@ func copyTree(src, dst string, renameGoTxt bool) error {
 	})
 }
 
+const submissionBoundary = `## Submission boundary
+
+ProofFence v0.1 is a source-edit benchmark. Modify only challenge.go.
+Do not add files or modify go.mod. The grader reconstructs the module from
+the trusted starter, accepts only challenge.go from the candidate, and applies
+a small safe-import/source policy before executing trusted tests.
+
+`
+
 func Materialize(root, id, dest string) error {
 	c, dir, err := findCase(root, id)
 	if err != nil {
@@ -136,10 +149,8 @@ func Materialize(root, id, dest string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dest, "TASK.md"), task, 0o644)
+	return os.WriteFile(filepath.Join(dest, "TASK.md"), append([]byte(submissionBoundary), task...), 0o644)
 }
-
-func copyCandidate(src, dst string) error { return copyTree(src, dst, false) }
 
 func trustedTestNames(graderDir string) ([]string, error) {
 	var names []string
@@ -160,7 +171,7 @@ func trustedTestNames(graderDir string) ([]string, error) {
 		}
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "Test") {
+			if !ok || fn.Recv != nil || fn.Name.Name == "TestMain" || !strings.HasPrefix(fn.Name.Name, "Test") {
 				continue
 			}
 			if fn.Type.Results != nil && len(fn.Type.Results.List) != 0 {
@@ -188,69 +199,144 @@ func trustedTestNames(graderDir string) ([]string, error) {
 	return names, nil
 }
 
-type goTestEvent struct {
-	Action  string  `json:"Action"`
-	Package string  `json:"Package"`
-	Test    string  `json:"Test"`
-	Output  string  `json:"Output"`
-	Elapsed float64 `json:"Elapsed"`
+var allowedCandidateImports = map[string]bool{
+	"bytes":         true,
+	"encoding/json": true,
+	"errors":        true,
+	"fmt":           true,
+	"io":            true,
+	"maps":          true,
+	"regexp":        true,
+	"slices":        true,
+	"sort":          true,
+	"strconv":       true,
+	"strings":       true,
+	"unicode":       true,
+	"unicode/utf8":  true,
 }
 
-type trustedTestState struct {
-	ran     bool
-	passed  bool
-	failed  bool
-	skipped bool
+func validateCandidateSource(src []byte) error {
+	if len(src) > 256*1024 {
+		return errors.New("candidate challenge.go exceeds 256 KiB")
+	}
+	f, err := parser.ParseFile(token.NewFileSet(), "challenge.go", src, parser.ParseComments)
+	if err != nil {
+		return fmt.Errorf("parse candidate challenge.go: %w", err)
+	}
+	if f.Name == nil || f.Name.Name != "challenge" {
+		return errors.New(`candidate challenge.go must declare package "challenge"`)
+	}
+	for _, group := range f.Comments {
+		for _, c := range group.List {
+			if strings.HasPrefix(strings.TrimSpace(c.Text), "//go:") {
+				return fmt.Errorf("candidate compiler directive is not allowed: %s", strings.TrimSpace(c.Text))
+			}
+		}
+	}
+	for _, imp := range f.Imports {
+		path, err := strconv.Unquote(imp.Path.Value)
+		if err != nil {
+			return fmt.Errorf("invalid candidate import: %w", err)
+		}
+		if imp.Name != nil && (imp.Name.Name == "_" || imp.Name.Name == ".") {
+			return fmt.Errorf("candidate import mode %q is not allowed for %s", imp.Name.Name, path)
+		}
+		if !allowedCandidateImports[path] {
+			return fmt.Errorf("candidate import %q is outside the v0.1 safe-import policy", path)
+		}
+	}
+	for _, decl := range f.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv != nil {
+			continue
+		}
+		if fn.Name.Name == "init" {
+			return errors.New("candidate init function is not allowed")
+		}
+		if fn.Name.Name == "TestMain" || strings.HasPrefix(fn.Name.Name, "Test") ||
+			strings.HasPrefix(fn.Name.Name, "Benchmark") || strings.HasPrefix(fn.Name.Name, "Fuzz") {
+			return fmt.Errorf("candidate test/lifecycle function %q is not allowed", fn.Name.Name)
+		}
+	}
+	return nil
 }
 
-func verifyTrustedTestEvents(out []byte, expected []string) error {
-	states := make(map[string]*trustedTestState, len(expected))
-	for _, name := range expected {
-		states[name] = &trustedTestState{}
+func copyValidatedCandidateSource(solution, trustedStarter, dst string) error {
+	entries, err := os.ReadDir(solution)
+	if err != nil {
+		return err
 	}
-
-	s := bufio.NewScanner(strings.NewReader(string(out)))
-	// Test output can contain long lines; keep the parser bounded but well above these tiny cases.
-	s.Buffer(make([]byte, 64*1024), 4*1024*1024)
-	for s.Scan() {
-		line := strings.TrimSpace(s.Text())
-		if line == "" {
-			continue
+	allowedPaths := map[string]bool{"challenge.go": true, "go.mod": true, "TASK.md": true}
+	for _, e := range entries {
+		if !allowedPaths[e.Name()] {
+			return fmt.Errorf("unexpected candidate path %q; v0.1 accepts only challenge.go with the trusted go.mod/TASK.md", e.Name())
 		}
-		var ev goTestEvent
-		if err := json.Unmarshal([]byte(line), &ev); err != nil {
-			return fmt.Errorf("malformed go test -json output: %w", err)
-		}
-		st, ok := states[ev.Test]
-		if !ok {
-			continue
-		}
-		switch ev.Action {
-		case "run":
-			st.ran = true
-		case "pass":
-			st.passed = true
-		case "fail":
-			st.failed = true
-		case "skip":
-			st.skipped = true
+		if e.IsDir() || e.Type()&os.ModeSymlink != 0 {
+			return fmt.Errorf("candidate path %q must be a regular file", e.Name())
 		}
 	}
-	if err := s.Err(); err != nil {
+	challengePath := filepath.Join(solution, "challenge.go")
+	st, err := os.Lstat(challengePath)
+	if err != nil {
+		return fmt.Errorf("candidate challenge.go: %w", err)
+	}
+	if !st.Mode().IsRegular() {
+		return errors.New("candidate challenge.go must be a regular file")
+	}
+	src, err := os.ReadFile(challengePath)
+	if err != nil {
+		return err
+	}
+	if err := validateCandidateSource(src); err != nil {
 		return err
 	}
 
-	var incomplete []string
-	for _, name := range expected {
-		st := states[name]
-		if !st.ran || !st.passed || st.failed || st.skipped {
-			incomplete = append(incomplete, name)
+	trustedMod, err := os.ReadFile(filepath.Join(trustedStarter, "go.mod"))
+	if err != nil {
+		return err
+	}
+	candidateMod, err := os.ReadFile(filepath.Join(solution, "go.mod"))
+	if err != nil {
+		return fmt.Errorf("candidate go.mod: %w", err)
+	}
+	if !bytes.Equal(candidateMod, trustedMod) {
+		return errors.New("candidate go.mod differs from the trusted starter")
+	}
+
+	if err := os.WriteFile(filepath.Join(dst, "challenge.go"), src, 0o644); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dst, "go.mod"), trustedMod, 0o644)
+}
+
+func controlledGoEnv() []string {
+	env := os.Environ()
+	out := make([]string, 0, len(env)+2)
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "GOWORK=") || strings.HasPrefix(kv, "GOFLAGS=") {
+			continue
 		}
+		out = append(out, kv)
 	}
-	if len(incomplete) != 0 {
-		return fmt.Errorf("trusted grader assertions did not all run and pass: %s", strings.Join(incomplete, ", "))
+	return append(out, "GOWORK=off", "GOFLAGS=")
+}
+
+func runTrustedTest(tmp, name string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	pattern := "^" + regexp.QuoteMeta(name) + "$"
+	cmd := exec.CommandContext(ctx, "go", "test", "-count=1", "-timeout=10s", "-run", pattern, ".")
+	cmd.Dir = tmp
+	cmd.Env = controlledGoEnv()
+	b, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
+		return b, fmt.Errorf("trusted test %s exceeded controller timeout", name)
 	}
-	return nil
+	if err != nil {
+		return b, fmt.Errorf("trusted test %s failed: %w", name, err)
+	}
+	return b, nil
 }
 
 func gradeUnsandboxed(root, id, solution string) (string, error) {
@@ -262,33 +348,29 @@ func gradeUnsandboxed(root, id, solution string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	tmp, err := os.MkdirTemp("", "proof-fence-grade-*")
 	if err != nil {
 		return "", err
 	}
 	defer os.RemoveAll(tmp)
-	if err := copyCandidate(solution, tmp); err != nil {
-		return "", err
+
+	if err := copyValidatedCandidateSource(solution, filepath.Join(dir, c.Starter), tmp); err != nil {
+		return fmt.Sprintf("[%s] FAIL\n", c.ID), err
 	}
-	_ = os.Remove(filepath.Join(tmp, "TASK.md"))
 	if err := copyTree(filepath.Join(dir, c.Grader), tmp, true); err != nil {
 		return "", err
 	}
-	cmd := exec.Command("go", "test", "-json", ".")
-	cmd.Dir = tmp
-	cmd.Env = append(os.Environ(), "GOWORK=off")
-	b, runErr := cmd.CombinedOutput()
 
-	assertionErr := verifyTrustedTestEvents(b, expectedTests)
-	passed := runErr == nil && assertionErr == nil
-	out := fmt.Sprintf("[%s] %s\n%s", c.ID, map[bool]string{true: "PASS", false: "FAIL"}[passed], string(b))
-	if runErr != nil {
-		return out, runErr
+	var transcript strings.Builder
+	for _, name := range expectedTests {
+		b, err := runTrustedTest(tmp, name)
+		fmt.Fprintf(&transcript, "=== TRUSTED %s ===\n%s", name, string(b))
+		if err != nil {
+			return fmt.Sprintf("[%s] FAIL\n%s", c.ID, transcript.String()), err
+		}
 	}
-	if assertionErr != nil {
-		return out, assertionErr
-	}
-	return out, nil
+	return fmt.Sprintf("[%s] PASS\n%s", c.ID, transcript.String()), nil
 }
 
 func Grade(root, id, solution string) (string, error) {

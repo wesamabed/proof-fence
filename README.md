@@ -28,7 +28,9 @@ Materialize a challenge into an isolated directory:
 go run ./cmd/proof-fence materialize PF-001 /tmp/pf001
 ```
 
-Give only `/tmp/pf001` to the coding agent. Then grade the resulting workspace from the benchmark repository. **The grader executes candidate code. Run it only inside a disposable VM/container with no secrets and no privileged credentials.** Local execution requires an explicit opt-in:
+Give only `/tmp/pf001` to the coding agent. v0.1 is intentionally a **source-edit benchmark**: the submission may change only `challenge.go`; `go.mod` is trusted and immutable, and extra candidate files are rejected before compilation. The materialized `TASK.md` states this boundary explicitly.
+
+Then grade from the benchmark repository **inside a disposable VM/container with no secrets or privileged credentials**. Local execution requires an explicit opt-in:
 
 ```bash
 PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 go run ./cmd/proof-fence grade PF-001 /tmp/pf001

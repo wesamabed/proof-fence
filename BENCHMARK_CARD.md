@@ -20,7 +20,8 @@ Exploit development, penetration testing of third-party systems, malware generat
 - no held-out confirmatory set is included;
 - no human inter-rater reliability study has been run;
 - no comparative novelty claim has been established;
-- pilot grading requires controller-observed run+pass events for every trusted top-level grader test; process exit status alone is not accepted as PASS;
+- v0.1 accepts only candidate edits to `challenge.go`, restores the trusted starter `go.mod`, rejects extra candidate files, and applies a documented safe-import/source policy before trusted tests run;
+- trusted grader tests are executed one at a time from controller-selected names; candidate stdout is diagnostic only and is never parsed as result authority;
 - v0.1 does not provide OS-level sandboxing for candidate code; graders must run in disposable isolation.
 
 ## Provenance
