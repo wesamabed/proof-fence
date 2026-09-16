@@ -3,6 +3,10 @@ import "testing"
 func good()CleanupEvidence{return CleanupEvidence{Succeeded,"",true,true,true,true}}
 func TestGood(t *testing.T){if !CleanupComplete(good()){t.Fatal("good cleanup rejected")}}
 func TestDenied(t *testing.T){e:=good();e.DeleteOutcome=Denied;e.ErrorCode="AccessDenied";if CleanupComplete(e){t.Fatal("denied delete promoted")}}
+func TestFailed(t *testing.T){e:=good();e.DeleteOutcome=Failed;if CleanupComplete(e){t.Fatal("failed delete promoted")}}
+func TestUnknown(t *testing.T){e:=good();e.DeleteOutcome=Outcome("MYSTERY");if CleanupComplete(e){t.Fatal("unknown delete outcome promoted")}}
+func TestSuccessWithError(t *testing.T){e:=good();e.ErrorCode="AccessDenied";if CleanupComplete(e){t.Fatal("success with error promoted")}}
+func TestResponseMissing(t *testing.T){e:=good();e.ResponseDeleted=false;if CleanupComplete(e){t.Fatal("missing positive response promoted")}}
 func TestResidueMissing(t *testing.T){e:=good();e.ResidueObserved=false;if CleanupComplete(e){t.Fatal("missing residue observation promoted")}}
 func TestResidueUnauthenticated(t *testing.T){e:=good();e.ResidueAuthenticated=false;if CleanupComplete(e){t.Fatal("unauthenticated residue promoted")}}
 func TestResiduePresent(t *testing.T){e:=good();e.ResidueEmpty=false;if CleanupComplete(e){t.Fatal("nonempty residue promoted")}}

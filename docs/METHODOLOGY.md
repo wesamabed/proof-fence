@@ -14,9 +14,9 @@ The v0.1 cases exercise five recurring dimensions:
 
 ## Evaluation workflow
 
-`materialize` copies only the starter workspace and task statement to an isolated directory. The coding agent should receive only that directory. `grade` copies the public grader into a temporary copy of the candidate workspace and runs `go test ./...`.
+`materialize` copies only the starter workspace and task statement to an isolated directory. The coding agent should receive only that directory. `grade` copies the public grader into a temporary copy of the candidate workspace and runs `go test -json .`. The controller derives the trusted top-level test names from the grader source before execution and returns `PASS` only if every trusted test emits both a controller-observed `run` event and a `pass` event with no fail/skip event. A zero process exit by itself is not sufficient.
 
-This separation prevents the normal evaluation path from handing the grader source to the agent before it writes its patch, even though the public repository remains fully reproducible. It is **not** a hostile-code sandbox: candidate code executes during grading and could attempt runtime introspection or host access. Reproducible studies should therefore grade inside a disposable VM/container with no secrets and restricted network access. v0.1 requires an explicit environment opt-in for local grading but does not claim that opt-in provides isolation.
+This separation prevents the normal evaluation path from handing the grader source to the agent before it writes its patch, even though the public repository remains fully reproducible. It is **not** a hostile-code sandbox: candidate code executes during grading and could attempt runtime introspection or host access. Reproducible studies should therefore grade inside a disposable VM/container with no secrets and restricted network access. v0.1 requires an explicit environment opt-in for local grading but does not claim that opt-in provides isolation. The event check is a result-integrity control, not a hostile-code sandbox.
 
 ## Scoring
 
@@ -46,3 +46,7 @@ The benchmark itself does not claim which condition is superior. That is an empi
 ## Public vs held-out cases
 
 The ten v0.1 cases are public pilot cases. Confirmatory research should create a separately held-out set from the same published taxonomy and preregister its scoring before model runs.
+
+## Reviewer independence for confirmatory studies
+
+The public pilot does not make causal claims about review workflows. Before a confirmatory comparison, preregister what “independent reviewer” means: whether implementation transcripts or model identity are visible, whether reviewer context is freshly instantiated, the allowed artifacts, model/version allocation, contamination handling, stopping/exclusion rules, and the primary estimand.

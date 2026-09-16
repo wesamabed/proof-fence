@@ -2,5 +2,13 @@ package challenge
 
 import "testing"
 func TestExactAccepted(t *testing.T){ b,e:=ParseBinding([]byte(`{"run_id":"r1","authorized":true}`)); if e!=nil||b.RunID!="r1"||!b.Authorized{t.Fatalf("valid rejected %#v %v",b,e)} }
-func TestAliasRejected(t *testing.T){ if _,e:=ParseBinding([]byte(`{"Run_ID":"r1","authorized":true}`)); e==nil{t.Fatal("case alias accepted")} }
+func TestAliasesRejected(t *testing.T){
+    for _,in:=range []string{
+        `{"Run_ID":"r1","authorized":true}`,
+        `{"RUN_ID":"r1","authorized":true}`,
+        `{"run_id":"r1","Authorized":true}`,
+        `{"run_id":"r1","AUTHORIZED":true}`,
+    }{if _,e:=ParseBinding([]byte(in));e==nil{t.Fatalf("case alias accepted: %s",in)}}
+}
 func TestExactPlusAliasRejected(t *testing.T){ if _,e:=ParseBinding([]byte(`{"run_id":"r1","Run_ID":"r2","authorized":true}`)); e==nil{t.Fatal("alias decoy accepted")} }
+func TestUnknownMemberRejected(t *testing.T){ if _,e:=ParseBinding([]byte(`{"run_id":"r1","authorized":true,"extra":1}`)); e==nil{t.Fatal("unknown member accepted")} }

@@ -5,7 +5,17 @@ import "testing"
 func TestValid(t *testing.T) {
     g, err := ParseGrant([]byte(`{"subject":"worker","allow":true}`))
     if err != nil || g.Subject != "worker" || !g.Allow { t.Fatalf("valid grant rejected: %#v %v", g, err) }
+    g, err = ParseGrant([]byte(`{"subject":"worker","allow":false}`))
+    if err != nil || g.Subject != "worker" || g.Allow { t.Fatalf("valid false grant rejected: %#v %v", g, err) }
 }
-func TestDuplicateRejected(t *testing.T) {
+func TestDuplicateSubjectRejected(t *testing.T) {
     if _, err := ParseGrant([]byte(`{"subject":"worker","subject":"admin","allow":true}`)); err == nil { t.Fatal("duplicate subject accepted") }
+}
+func TestDuplicateAllowRejected(t *testing.T) {
+    if _, err := ParseGrant([]byte(`{"subject":"worker","allow":false,"allow":true}`)); err == nil { t.Fatal("duplicate allow accepted") }
+}
+func TestRequiredFieldsRemainRequired(t *testing.T) {
+    if _, err := ParseGrant([]byte(`{"allow":true}`)); err == nil { t.Fatal("missing subject accepted") }
+    if _, err := ParseGrant([]byte(`{"subject":"worker"}`)); err == nil { t.Fatal("missing allow accepted") }
+    if _, err := ParseGrant([]byte(`{"subject":"","allow":true}`)); err == nil { t.Fatal("empty subject accepted") }
 }

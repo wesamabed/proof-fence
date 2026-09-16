@@ -2,5 +2,6 @@ package challenge
 import "testing"
 func TestObserved(t *testing.T){if !IsolationProven(Reachability{false,true,true,true}){t.Fatal("authenticated observation rejected")}}
 func TestCallerOnly(t *testing.T){if IsolationProven(Reachability{true,false,false,false}){t.Fatal("caller-only assertion promoted")}}
+func TestAbsentButAuthenticated(t *testing.T){if IsolationProven(Reachability{false,false,true,true}){t.Fatal("absent observation promoted")}}
 func TestUnauthenticated(t *testing.T){if IsolationProven(Reachability{false,true,false,true}){t.Fatal("unauthenticated observation promoted")}}
 func TestObservedUnsafe(t *testing.T){if IsolationProven(Reachability{true,true,true,false}){t.Fatal("caller overrode authenticated unsafe observation")}}

@@ -31,3 +31,7 @@ This is a protocol draft, not a completed or preregistered study.
 
 ## Reporting rule
 Publish negative results, reviewer overreach, and failed corrections as well as successes. Do not infer production security from benchmark performance.
+
+## Reproducibility metadata
+
+For any formal comparative run, record the exact Go patch version, OS/architecture, container or VM image digest, and exact GitHub Action commit SHAs (if GitHub Actions is part of the measured environment). The pilot CI may use maintained major action tags, but confirmatory results should pin exact environment identities.

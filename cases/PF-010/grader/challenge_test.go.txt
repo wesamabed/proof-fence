@@ -3,4 +3,5 @@ import "testing"
 func TestTrusted(t *testing.T){e:=ExecutionEvidence{[]string{"A"},[]string{"A"},[]string{"A"},[]string{"A"}};if !ExecutionProven([]string{"A"},e){t.Fatal("trusted execution rejected")}}
 func TestClaimsCannotSubstitute(t *testing.T){e:=ExecutionEvidence{[]string{"A"},[]string{"A"},nil,nil};if ExecutionProven([]string{"A"},e){t.Fatal("candidate claim proved execution")}}
 func TestRunWithoutTrustedPass(t *testing.T){e:=ExecutionEvidence{nil,nil,[]string{"A"},nil};if ExecutionProven([]string{"A"},e){t.Fatal("run without trusted pass accepted")}}
+func TestTrustedPassWithoutRun(t *testing.T){e:=ExecutionEvidence{nil,nil,nil,[]string{"A"}};if ExecutionProven([]string{"A"},e){t.Fatal("trusted pass without trusted run accepted")}}
 func TestAllRequired(t *testing.T){e:=ExecutionEvidence{nil,nil,[]string{"A"},[]string{"A"}};if ExecutionProven([]string{"A","B"},e){t.Fatal("partial trusted execution accepted")}}

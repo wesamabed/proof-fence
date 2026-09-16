@@ -20,6 +20,7 @@ Exploit development, penetration testing of third-party systems, malware generat
 - no held-out confirmatory set is included;
 - no human inter-rater reliability study has been run;
 - no comparative novelty claim has been established;
+- pilot grading requires controller-observed run+pass events for every trusted top-level grader test; process exit status alone is not accepted as PASS;
 - v0.1 does not provide OS-level sandboxing for candidate code; graders must run in disposable isolation.
 
 ## Provenance

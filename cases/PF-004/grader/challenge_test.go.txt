@@ -2,6 +2,7 @@ package challenge
 import "testing"
 func TestCoherentSuccess(t *testing.T){if !DeletionComplete(DeleteEvidence{Succeeded,"",true}){t.Fatal("coherent success rejected")}}
 func TestDeniedCannotBeSuccess(t *testing.T){if DeletionComplete(DeleteEvidence{Denied,"AccessDenied",true}){t.Fatal("denied invocation promoted")}}
+func TestFailedCannotBeSuccess(t *testing.T){if DeletionComplete(DeleteEvidence{Failed,"",true}){t.Fatal("failed invocation promoted")}}
 func TestSucceededWithErrorCannotBeSuccess(t *testing.T){if DeletionComplete(DeleteEvidence{Succeeded,"AccessDenied",true}){t.Fatal("contradictory error promoted")}}
 func TestMissingPositiveResponse(t *testing.T){if DeletionComplete(DeleteEvidence{Succeeded,"",false}){t.Fatal("missing response proof promoted")}}
 func TestUnknownOutcome(t *testing.T){if DeletionComplete(DeleteEvidence{Outcome("MYSTERY"),"",true}){t.Fatal("unknown outcome promoted")}}

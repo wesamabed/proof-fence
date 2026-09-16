@@ -1,9 +1,13 @@
 package bench
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"io/fs"
 	"os"
@@ -137,8 +141,124 @@ func Materialize(root, id, dest string) error {
 
 func copyCandidate(src, dst string) error { return copyTree(src, dst, false) }
 
+func trustedTestNames(graderDir string) ([]string, error) {
+	var names []string
+	err := filepath.WalkDir(graderDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !strings.HasSuffix(path, ".go.txt") {
+			return nil
+		}
+		src, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		f, err := parser.ParseFile(token.NewFileSet(), path, src, 0)
+		if err != nil {
+			return fmt.Errorf("parse trusted grader %s: %w", path, err)
+		}
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "Test") {
+				continue
+			}
+			if fn.Type.Results != nil && len(fn.Type.Results.List) != 0 {
+				continue
+			}
+			if fn.Type.Params == nil || len(fn.Type.Params.List) != 1 {
+				continue
+			}
+			names = append(names, fn.Name.Name)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		return nil, errors.New("trusted grader declares no top-level tests")
+	}
+	for i := 1; i < len(names); i++ {
+		if names[i] == names[i-1] {
+			return nil, fmt.Errorf("duplicate trusted grader test name %q", names[i])
+		}
+	}
+	return names, nil
+}
+
+type goTestEvent struct {
+	Action  string  `json:"Action"`
+	Package string  `json:"Package"`
+	Test    string  `json:"Test"`
+	Output  string  `json:"Output"`
+	Elapsed float64 `json:"Elapsed"`
+}
+
+type trustedTestState struct {
+	ran     bool
+	passed  bool
+	failed  bool
+	skipped bool
+}
+
+func verifyTrustedTestEvents(out []byte, expected []string) error {
+	states := make(map[string]*trustedTestState, len(expected))
+	for _, name := range expected {
+		states[name] = &trustedTestState{}
+	}
+
+	s := bufio.NewScanner(strings.NewReader(string(out)))
+	// Test output can contain long lines; keep the parser bounded but well above these tiny cases.
+	s.Buffer(make([]byte, 64*1024), 4*1024*1024)
+	for s.Scan() {
+		line := strings.TrimSpace(s.Text())
+		if line == "" {
+			continue
+		}
+		var ev goTestEvent
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			return fmt.Errorf("malformed go test -json output: %w", err)
+		}
+		st, ok := states[ev.Test]
+		if !ok {
+			continue
+		}
+		switch ev.Action {
+		case "run":
+			st.ran = true
+		case "pass":
+			st.passed = true
+		case "fail":
+			st.failed = true
+		case "skip":
+			st.skipped = true
+		}
+	}
+	if err := s.Err(); err != nil {
+		return err
+	}
+
+	var incomplete []string
+	for _, name := range expected {
+		st := states[name]
+		if !st.ran || !st.passed || st.failed || st.skipped {
+			incomplete = append(incomplete, name)
+		}
+	}
+	if len(incomplete) != 0 {
+		return fmt.Errorf("trusted grader assertions did not all run and pass: %s", strings.Join(incomplete, ", "))
+	}
+	return nil
+}
+
 func gradeUnsandboxed(root, id, solution string) (string, error) {
 	c, dir, err := findCase(root, id)
+	if err != nil {
+		return "", err
+	}
+	expectedTests, err := trustedTestNames(filepath.Join(dir, c.Grader))
 	if err != nil {
 		return "", err
 	}
@@ -154,11 +274,21 @@ func gradeUnsandboxed(root, id, solution string) (string, error) {
 	if err := copyTree(filepath.Join(dir, c.Grader), tmp, true); err != nil {
 		return "", err
 	}
-	cmd := exec.Command("go", "test", "./...")
+	cmd := exec.Command("go", "test", "-json", ".")
 	cmd.Dir = tmp
 	cmd.Env = append(os.Environ(), "GOWORK=off")
 	b, runErr := cmd.CombinedOutput()
-	return fmt.Sprintf("[%s] %s\n%s", c.ID, map[bool]string{true: "PASS", false: "FAIL"}[runErr == nil], string(b)), runErr
+
+	assertionErr := verifyTrustedTestEvents(b, expectedTests)
+	passed := runErr == nil && assertionErr == nil
+	out := fmt.Sprintf("[%s] %s\n%s", c.ID, map[bool]string{true: "PASS", false: "FAIL"}[passed], string(b))
+	if runErr != nil {
+		return out, runErr
+	}
+	if assertionErr != nil {
+		return out, assertionErr
+	}
+	return out, nil
 }
 
 func Grade(root, id, solution string) (string, error) {
