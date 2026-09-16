@@ -48,6 +48,7 @@ func main() {
 		out, err := bench.Grade(root, os.Args[2], os.Args[3])
 		fmt.Print(out)
 		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	case "selftest":

@@ -16,7 +16,7 @@ The v0.1 cases exercise five recurring dimensions:
 
 `materialize` copies only the starter workspace and task statement to an isolated directory. The coding agent should receive only that directory. `grade` copies the public grader into a temporary copy of the candidate workspace and runs `go test ./...`.
 
-This separation prevents the normal evaluation path from handing the grader to the agent, even though the public repository remains fully reproducible.
+This separation prevents the normal evaluation path from handing the grader source to the agent before it writes its patch, even though the public repository remains fully reproducible. It is **not** a hostile-code sandbox: candidate code executes during grading and could attempt runtime introspection or host access. Reproducible studies should therefore grade inside a disposable VM/container with no secrets and restricted network access. v0.1 requires an explicit environment opt-in for local grading but does not claim that opt-in provides isolation.
 
 ## Scoring
 

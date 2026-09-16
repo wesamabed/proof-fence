@@ -19,7 +19,8 @@ Exploit development, penetration testing of third-party systems, malware generat
 - graders are binary pass/fail and do not yet score explanation quality;
 - no held-out confirmatory set is included;
 - no human inter-rater reliability study has been run;
-- no comparative novelty claim has been established.
+- no comparative novelty claim has been established;
+- v0.1 does not provide OS-level sandboxing for candidate code; graders must run in disposable isolation.
 
 ## Provenance
 The case taxonomy was abstracted from recurring failure patterns observed during private defensive cloud-control-plane engineering. No private source code, credentials, live account identifiers, or raw review reports are included.

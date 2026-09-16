@@ -9,3 +9,7 @@ Do not submit:
 - raw private Arbiter reports or source code.
 
 Synthetic cases and fixes to the public benchmark are welcome through normal pull requests.
+
+## Evaluator execution boundary
+
+`proof-fence grade` executes candidate-authored Go code. Treat that code as untrusted. Use a disposable VM/container with no cloud credentials, tokens, SSH agents, sensitive mounts, or host secrets; restrict network access where practical. v0.1 intentionally refuses unsandboxed grading unless `PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1` is set. That variable is an acknowledgment, not a sandbox.

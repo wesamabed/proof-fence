@@ -137,7 +137,7 @@ func Materialize(root, id, dest string) error {
 
 func copyCandidate(src, dst string) error { return copyTree(src, dst, false) }
 
-func Grade(root, id, solution string) (string, error) {
+func gradeUnsandboxed(root, id, solution string) (string, error) {
 	c, dir, err := findCase(root, id)
 	if err != nil {
 		return "", err
@@ -161,6 +161,13 @@ func Grade(root, id, solution string) (string, error) {
 	return fmt.Sprintf("[%s] %s\n%s", c.ID, map[bool]string{true: "PASS", false: "FAIL"}[runErr == nil], string(b)), runErr
 }
 
+func Grade(root, id, solution string) (string, error) {
+	if os.Getenv("PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE") != "1" {
+		return "", errors.New("refusing to execute candidate code without explicit opt-in; run in a disposable sandbox and set PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1")
+	}
+	return gradeUnsandboxed(root, id, solution)
+}
+
 func SelfTest(root string, w io.Writer) error {
 	cases, err := LoadCases(root)
 	if err != nil {
@@ -175,7 +182,7 @@ func SelfTest(root string, w io.Writer) error {
 			os.RemoveAll(tmp)
 			return err
 		}
-		if out, err := Grade(root, c.ID, filepath.Join(tmp, "starter")); err == nil {
+		if out, err := gradeUnsandboxed(root, c.ID, filepath.Join(tmp, "starter")); err == nil {
 			os.RemoveAll(tmp)
 			return fmt.Errorf("%s starter unexpectedly passed:\n%s", c.ID, out)
 		}
@@ -189,7 +196,7 @@ func SelfTest(root string, w io.Writer) error {
 			os.RemoveAll(tmp)
 			return err
 		}
-		out, err := Grade(root, c.ID, refDir)
+		out, err := gradeUnsandboxed(root, c.ID, refDir)
 		if err != nil {
 			os.RemoveAll(tmp)
 			return fmt.Errorf("%s reference failed:\n%s", c.ID, out)

@@ -14,6 +14,7 @@ This is a protocol draft, not a completed or preregistered study.
 - randomize case order;
 - preserve exact prompts, model identifiers, tool permissions, and timestamps;
 - grade automatically before human interpretation;
+- execute every candidate in a fresh disposable VM/container with no secrets or privileged credentials and restricted network access where practical;
 - blind human adjudicators to model identity when scoring explanations/reviewer findings.
 
 ## Primary outcomes

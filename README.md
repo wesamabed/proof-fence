@@ -28,10 +28,10 @@ Materialize a challenge into an isolated directory:
 go run ./cmd/proof-fence materialize PF-001 /tmp/pf001
 ```
 
-Give only `/tmp/pf001` to the coding agent. Then grade the resulting workspace from the benchmark repository:
+Give only `/tmp/pf001` to the coding agent. Then grade the resulting workspace from the benchmark repository. **The grader executes candidate code. Run it only inside a disposable VM/container with no secrets and no privileged credentials.** Local execution requires an explicit opt-in:
 
 ```bash
-go run ./cmd/proof-fence grade PF-001 /tmp/pf001
+PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 go run ./cmd/proof-fence grade PF-001 /tmp/pf001
 ```
 
 The public v0.1 cases are transparent. For comparative research, evaluators should isolate the task workspace from the benchmark repository and use a separately held-out case set for confirmatory measurements.
