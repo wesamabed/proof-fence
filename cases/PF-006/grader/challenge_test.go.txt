@@ -1,0 +1,6 @@
+package challenge
+import "testing"
+func TestExact(t *testing.T){if !AuthorizedForRun("r1",VerifiedContext{true,"r1","abc"}){t.Fatal("exact rejected")}}
+func TestForeign(t *testing.T){if AuthorizedForRun("r1",VerifiedContext{true,"r2","abc"}){t.Fatal("foreign run accepted")}}
+func TestUnverified(t *testing.T){if AuthorizedForRun("r1",VerifiedContext{false,"r1","abc"}){t.Fatal("unverified accepted")}}
+func TestEmptyDigest(t *testing.T){if AuthorizedForRun("r1",VerifiedContext{true,"r1",""}){t.Fatal("empty subject binding accepted")}}

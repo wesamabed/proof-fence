@@ -1,0 +1,11 @@
+{
+  "id": "PF-001",
+  "title": "Reject duplicate JSON members",
+  "category": "admission",
+  "invariant": "An exact duplicate member in a security-bearing JSON object must be rejected rather than resolved by last-write-wins parsing.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

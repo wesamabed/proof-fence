@@ -1,0 +1,112 @@
+[
+  {
+    "id": "PF-001",
+    "title": "Reject duplicate JSON members",
+    "category": "admission",
+    "invariant": "An exact duplicate member in a security-bearing JSON object must be rejected rather than resolved by last-write-wins parsing.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-002",
+    "title": "Require exact JSON member spelling",
+    "category": "admission",
+    "invariant": "Case-folded aliases must not satisfy an exact security vocabulary or coexist as a decoy beside the exact member.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-003",
+    "title": "Reject trailing JSON documents",
+    "category": "admission",
+    "invariant": "A parser must consume exactly one complete security-bearing JSON value plus optional whitespace.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-004",
+    "title": "Reconcile response bytes with physical outcome",
+    "category": "coherence",
+    "invariant": "Success-shaped response content must not authorize success when the physical invocation outcome or error code contradicts it.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-005",
+    "title": "Withhold positives when the authenticated producer is missing",
+    "category": "closure",
+    "invariant": "A dependent positive fact is unknown unless its required producer exists and is authenticated.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-006",
+    "title": "Bind verified context to the required run",
+    "category": "provenance",
+    "invariant": "Cryptographic/structural validity alone is insufficient; the verified context must be associated with the exact required run.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-007",
+    "title": "Do not promote caller assertions into observed security facts",
+    "category": "provenance",
+    "invariant": "A caller-authored assertion cannot substitute for the required authenticated observation.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-008",
+    "title": "Require coherent cleanup and residue evidence",
+    "category": "coherence",
+    "invariant": "Destructive cleanup is complete only when deletion and residue observations are both present and mutually coherent.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-009",
+    "title": "Fail when a required security test disappears",
+    "category": "execution-proof",
+    "invariant": "A previously required security test must not silently disappear from the discovered test universe.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-010",
+    "title": "Require trusted execution evidence",
+    "category": "execution-proof",
+    "invariant": "Candidate-authored run/pass claims cannot prove that required test bodies actually executed and passed.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  }
+]

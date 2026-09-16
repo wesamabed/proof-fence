@@ -1,0 +1,3 @@
+package challenge
+import("fmt")
+func ValidateRequiredTests(required,discovered []string)error{r:=map[string]bool{};for _,x:=range required{if r[x]{return fmt.Errorf("duplicate required test %s",x)};r[x]=true};d:=map[string]bool{};for _,x:=range discovered{d[x]=true};for x:=range r{if !d[x]{return fmt.Errorf("required test missing: %s",x)}};return nil}

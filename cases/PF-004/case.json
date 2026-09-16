@@ -1,0 +1,11 @@
+{
+  "id": "PF-004",
+  "title": "Reconcile response bytes with physical outcome",
+  "category": "coherence",
+  "invariant": "Success-shaped response content must not authorize success when the physical invocation outcome or error code contradicts it.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

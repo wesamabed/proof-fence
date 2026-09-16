@@ -1,0 +1,8 @@
+package challenge
+import "testing"
+func good()CleanupEvidence{return CleanupEvidence{Succeeded,"",true,true,true,true}}
+func TestGood(t *testing.T){if !CleanupComplete(good()){t.Fatal("good cleanup rejected")}}
+func TestDenied(t *testing.T){e:=good();e.DeleteOutcome=Denied;e.ErrorCode="AccessDenied";if CleanupComplete(e){t.Fatal("denied delete promoted")}}
+func TestResidueMissing(t *testing.T){e:=good();e.ResidueObserved=false;if CleanupComplete(e){t.Fatal("missing residue observation promoted")}}
+func TestResidueUnauthenticated(t *testing.T){e:=good();e.ResidueAuthenticated=false;if CleanupComplete(e){t.Fatal("unauthenticated residue promoted")}}
+func TestResiduePresent(t *testing.T){e:=good();e.ResidueEmpty=false;if CleanupComplete(e){t.Fatal("nonempty residue promoted")}}

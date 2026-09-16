@@ -1,0 +1,5 @@
+package challenge
+import "testing"
+func TestWhitespaceOK(t *testing.T){v,e:=ParseDecision([]byte("{\"permit\":true} \n\t"));if e!=nil||!v.Permit{t.Fatalf("valid %v %#v",e,v)}}
+func TestSecondDocumentRejected(t *testing.T){if _,e:=ParseDecision([]byte(`{"permit":true}{"permit":false}`));e==nil{t.Fatal("second document accepted")}}
+func TestGarbageRejected(t *testing.T){if _,e:=ParseDecision([]byte(`{"permit":true} x`));e==nil{t.Fatal("trailing garbage accepted")}}

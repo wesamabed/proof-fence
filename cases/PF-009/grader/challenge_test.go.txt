@@ -1,0 +1,6 @@
+package challenge
+import "testing"
+func TestExact(t *testing.T){if e:=ValidateRequiredTests([]string{"TestA","TestB"},[]string{"TestA","TestB"});e!=nil{t.Fatal(e)}}
+func TestExtraAllowed(t *testing.T){if e:=ValidateRequiredTests([]string{"TestA"},[]string{"TestA","TestC"});e!=nil{t.Fatal(e)}}
+func TestMissingRejected(t *testing.T){if e:=ValidateRequiredTests([]string{"TestA","TestB"},[]string{"TestA"});e==nil{t.Fatal("missing required test accepted")}}
+func TestDuplicateManifestRejected(t *testing.T){if e:=ValidateRequiredTests([]string{"TestA","TestA"},[]string{"TestA"});e==nil{t.Fatal("duplicate manifest accepted")}}

@@ -1,0 +1,11 @@
+{
+  "id": "PF-005",
+  "title": "Withhold positives when the authenticated producer is missing",
+  "category": "closure",
+  "invariant": "A dependent positive fact is unknown unless its required producer exists and is authenticated.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

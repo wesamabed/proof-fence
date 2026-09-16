@@ -1,0 +1,11 @@
+{
+  "id": "PF-006",
+  "title": "Bind verified context to the required run",
+  "category": "provenance",
+  "invariant": "Cryptographic/structural validity alone is insufficient; the verified context must be associated with the exact required run.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

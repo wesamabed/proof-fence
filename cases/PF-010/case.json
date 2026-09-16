@@ -1,0 +1,11 @@
+{
+  "id": "PF-010",
+  "title": "Require trusted execution evidence",
+  "category": "execution-proof",
+  "invariant": "Candidate-authored run/pass claims cannot prove that required test bodies actually executed and passed.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

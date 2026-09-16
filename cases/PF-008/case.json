@@ -1,0 +1,11 @@
+{
+  "id": "PF-008",
+  "title": "Require coherent cleanup and residue evidence",
+  "category": "coherence",
+  "invariant": "Destructive cleanup is complete only when deletion and residue observations are both present and mutually coherent.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

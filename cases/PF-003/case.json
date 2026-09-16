@@ -1,0 +1,11 @@
+{
+  "id": "PF-003",
+  "title": "Reject trailing JSON documents",
+  "category": "admission",
+  "invariant": "A parser must consume exactly one complete security-bearing JSON value plus optional whitespace.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

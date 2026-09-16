@@ -1,0 +1,4 @@
+package challenge
+import("bytes";"encoding/json";"errors";"io")
+type Decision struct{Permit bool `json:"permit"`}
+func ParseDecision(data []byte)(Decision,error){var v Decision;d:=json.NewDecoder(bytes.NewReader(data));if e:=d.Decode(&v);e!=nil{return Decision{},e};var x any;if e:=d.Decode(&x);e!=io.EOF{if e==nil{return Decision{},errors.New("second JSON value")};return Decision{},e};return v,nil}

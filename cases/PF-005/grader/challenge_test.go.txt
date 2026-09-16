@@ -1,0 +1,6 @@
+package challenge
+import "testing"
+func TestPositive(t *testing.T){f:=NetworkSafety(Evidence{true,true,true});if !f.Known||!f.Value{t.Fatalf("positive %#v",f)}}
+func TestNegativeKnown(t *testing.T){f:=NetworkSafety(Evidence{true,true,false});if !f.Known||f.Value{t.Fatalf("negative %#v",f)}}
+func TestMissingUnknown(t *testing.T){f:=NetworkSafety(Evidence{false,false,true});if f.Known{t.Fatalf("missing producer became known %#v",f)}}
+func TestUnauthenticatedUnknown(t *testing.T){f:=NetworkSafety(Evidence{true,false,true});if f.Known{t.Fatalf("unauthenticated producer became known %#v",f)}}

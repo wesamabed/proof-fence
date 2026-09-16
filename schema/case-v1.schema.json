@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProofFence case v1",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "category",
+    "invariant",
+    "starter",
+    "grader",
+    "reference",
+    "public_safety"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PF-[0-9]{3}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "admission",
+        "provenance",
+        "coherence",
+        "closure",
+        "execution-proof"
+      ]
+    },
+    "invariant": {
+      "type": "string",
+      "minLength": 1
+    },
+    "starter": {
+      "type": "string"
+    },
+    "grader": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "public_safety": {
+      "const": "synthetic"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

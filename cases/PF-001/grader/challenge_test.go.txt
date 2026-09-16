@@ -1,0 +1,11 @@
+package challenge
+
+import "testing"
+
+func TestValid(t *testing.T) {
+    g, err := ParseGrant([]byte(`{"subject":"worker","allow":true}`))
+    if err != nil || g.Subject != "worker" || !g.Allow { t.Fatalf("valid grant rejected: %#v %v", g, err) }
+}
+func TestDuplicateRejected(t *testing.T) {
+    if _, err := ParseGrant([]byte(`{"subject":"worker","subject":"admin","allow":true}`)); err == nil { t.Fatal("duplicate subject accepted") }
+}
