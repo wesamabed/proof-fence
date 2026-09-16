@@ -52,7 +52,7 @@ func TestMaterializeDeclaresSourceEditBoundary(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := string(b)
-	for _, want := range []string{"Modify only challenge.go", "Do not add files", "Do not", "modify go.mod"} {
+	for _, want := range []string{"Modify only challenge.go", "Do not add files", "modify go.mod", "encoding/json", "must not declare init", "Dot and", "not hidden grader requirements"} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("TASK.md missing submission-boundary text %q:\n%s", want, s)
 		}

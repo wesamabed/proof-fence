@@ -127,8 +127,14 @@ const submissionBoundary = `## Submission boundary
 
 ProofFence v0.1 is a source-edit benchmark. Modify only challenge.go.
 Do not add files or modify go.mod. The grader reconstructs the module from
-the trusted starter, accepts only challenge.go from the candidate, and applies
-a small safe-import/source policy before executing trusted tests.
+the trusted starter and accepts only challenge.go from the candidate.
+
+Candidate challenge.go must remain in package challenge; must not use //go:
+compiler directives; must not declare init, Test*, Benchmark*, or Fuzz*
+functions; and may import only: bytes, encoding/json, errors, fmt, io, maps,
+regexp, slices, sort, strconv, strings, unicode, and unicode/utf8. Dot and
+blank imports are not allowed. These v0.1 restrictions are part of the public
+benchmark contract, not hidden grader requirements.
 
 `
 
