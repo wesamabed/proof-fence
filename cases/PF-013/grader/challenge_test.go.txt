@@ -1,0 +1,158 @@
+package challenge
+
+import "testing"
+
+func decide(intent Intent, status ApplyStatus, state SlotState) Decision {
+	return RotationDecision(
+		Request{Intent: intent},
+		ApplyReport{Returned: true, Status: status},
+		Readback{Present: true, Verified: true, State: state},
+	)
+}
+
+func want(t *testing.T, got, expected Decision, what string) {
+	t.Helper()
+	if got != expected {
+		t.Fatalf("%s: got %s, want %s", what, got, expected)
+	}
+}
+
+func TestInstallCorroboratedByPresentKey(t *testing.T) {
+	want(t, decide(Install, Applied, KeyPresent), Grant,
+		"an install the service reports carried out, with the key read back in the slot")
+}
+
+func TestInstallContradictedByAbsentKey(t *testing.T) {
+	want(t, decide(Install, Applied, KeyAbsent), Quarantine,
+		"an install the service reports carried out, with no key read back in the slot")
+}
+
+func TestDeclinedInstallCorroboratedByAbsentKey(t *testing.T) {
+	want(t, decide(Install, Rejected, KeyAbsent), Retain,
+		"an install the service declined, with the slot read back still empty")
+}
+
+func TestDeclinedInstallContradictedByPresentKey(t *testing.T) {
+	want(t, decide(Install, Rejected, KeyPresent), Quarantine,
+		"an install the service declined, with a key nonetheless read back in the slot")
+}
+
+func TestRemoveCorroboratedByAbsentKey(t *testing.T) {
+	want(t, decide(Remove, Applied, KeyAbsent), Revoke,
+		"a removal the service reports carried out, with the slot read back empty")
+}
+
+func TestRemoveContradictedByPresentKey(t *testing.T) {
+	want(t, decide(Remove, Applied, KeyPresent), Quarantine,
+		"a removal the service reports carried out, with the key still read back in the slot")
+}
+
+func TestDeclinedRemoveCorroboratedByPresentKey(t *testing.T) {
+	want(t, decide(Remove, Rejected, KeyPresent), Retain,
+		"a removal the service declined, with the key read back still in the slot")
+}
+
+func TestDeclinedRemoveContradictedByAbsentKey(t *testing.T) {
+	want(t, decide(Remove, Rejected, KeyAbsent), Quarantine,
+		"a removal the service declined, with the slot nonetheless read back empty")
+}
+
+func TestInstallErrorWithPresentKey(t *testing.T) {
+	want(t, decide(Install, Errored, KeyPresent), Quarantine,
+		"an install whose outcome the service could not report, with a key in the slot")
+}
+
+func TestInstallErrorWithAbsentKey(t *testing.T) {
+	want(t, decide(Install, Errored, KeyAbsent), Quarantine,
+		"an install whose outcome the service could not report, with an empty slot")
+}
+
+func TestRemoveErrorWithAbsentKey(t *testing.T) {
+	want(t, decide(Remove, Errored, KeyAbsent), Quarantine,
+		"a removal whose outcome the service could not report, with an empty slot")
+}
+
+func TestRemoveErrorWithPresentKey(t *testing.T) {
+	want(t, decide(Remove, Errored, KeyPresent), Quarantine,
+		"a removal whose outcome the service could not report, with a key in the slot")
+}
+
+func TestInstallWithUnreadableSlot(t *testing.T) {
+	want(t, decide(Install, Applied, Unreadable), Quarantine,
+		"an install the service reports carried out, with an undecodable slot")
+}
+
+func TestRemoveWithUnreadableSlot(t *testing.T) {
+	want(t, decide(Remove, Applied, Unreadable), Quarantine,
+		"a removal the service reports carried out, with an undecodable slot")
+}
+
+func TestUnattributableReadback(t *testing.T) {
+	got := RotationDecision(
+		Request{Intent: Install},
+		ApplyReport{Returned: true, Status: Applied},
+		Readback{Present: true, Verified: false, State: KeyPresent},
+	)
+	want(t, got, Quarantine, "a readback record whose signature did not verify")
+}
+
+func TestUnattributableReadbackOnRemoval(t *testing.T) {
+	got := RotationDecision(
+		Request{Intent: Remove},
+		ApplyReport{Returned: true, Status: Applied},
+		Readback{Present: true, Verified: false, State: KeyAbsent},
+	)
+	want(t, got, Quarantine, "a removal corroborated only by an unattributable readback")
+}
+
+func TestMissingReadbackRecord(t *testing.T) {
+	got := RotationDecision(
+		Request{Intent: Install},
+		ApplyReport{Returned: true, Status: Applied},
+		Readback{Present: false, Verified: true, State: KeyPresent},
+	)
+	want(t, got, Quarantine, "a readback record that was never loaded")
+}
+
+func TestNoResponseFromTheService(t *testing.T) {
+	got := RotationDecision(
+		Request{Intent: Install},
+		ApplyReport{Returned: false},
+		Readback{Present: true, Verified: true, State: KeyPresent},
+	)
+	want(t, got, Quarantine, "an install for which no response arrived at all")
+}
+
+func TestNoResponseFromTheServiceOnRemoval(t *testing.T) {
+	got := RotationDecision(
+		Request{Intent: Remove},
+		ApplyReport{Returned: false},
+		Readback{Present: true, Verified: true, State: KeyAbsent},
+	)
+	want(t, got, Quarantine, "a removal for which no response arrived at all")
+}
+
+func TestUnmodelledApplyStatus(t *testing.T) {
+	want(t, decide(Install, ApplyStatus("PARTIALLY_APPLIED"), KeyPresent), Quarantine,
+		"a status this client release does not model")
+}
+
+func TestEmptyApplyStatus(t *testing.T) {
+	want(t, decide(Remove, ApplyStatus(""), KeyAbsent), Quarantine,
+		"a report carrying no status")
+}
+
+func TestUnmodelledIntent(t *testing.T) {
+	want(t, decide(Intent("REPLACE"), Applied, KeyPresent), Quarantine,
+		"an intent this client release does not model")
+}
+
+func TestEmptyEvidence(t *testing.T) {
+	want(t, RotationDecision(Request{}, ApplyReport{}, Readback{}), Quarantine,
+		"an entirely empty evidence set")
+}
+
+func TestUnmodelledSlotState(t *testing.T) {
+	want(t, decide(Install, Applied, SlotState("KEY_MAYBE")), Quarantine,
+		"a slot state this client release does not model")
+}

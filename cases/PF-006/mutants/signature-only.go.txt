@@ -1,0 +1,12 @@
+package challenge
+
+type Attestation struct {
+	SignatureValid bool
+	Scope          string
+	SubjectDigest  string
+}
+
+// Treats a verifiable signature as sufficient.
+func AttestationSatisfies(requiredScope string, a Attestation) bool {
+	return a.SignatureValid
+}

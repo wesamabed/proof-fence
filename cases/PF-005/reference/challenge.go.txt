@@ -1,5 +1,28 @@
 package challenge
 
-type Fact struct{Known bool;Value bool}
-type Evidence struct{ProducerPresent bool;Authenticated bool;DerivedSafe bool}
-func NetworkSafety(e Evidence)Fact{if !e.ProducerPresent||!e.Authenticated{return Fact{}};return Fact{Known:true,Value:e.DerivedSafe}}
+type Finding struct {
+	Determined bool
+	Value      bool
+}
+
+type PathAnalysis struct {
+	Recorded       bool
+	SignatureValid bool
+	ReportedNoPath bool
+}
+
+// PathFinding maps one loaded analysis to the console state its evidence
+// supports.
+//
+// ReportedNoPath is a field of the run record, so it carries the analyzer's
+// conclusion only when there is a record and that record is attributable to the
+// analyzer. Without both, the field's value is not the analyzer's conclusion --
+// and "not the analyzer's conclusion" is not the same as "the analyzer found a
+// path", which is why the missing-evidence state is the undetermined one and not
+// the escalation one.
+func PathFinding(a PathAnalysis) Finding {
+	if !a.Recorded || !a.SignatureValid {
+		return Finding{}
+	}
+	return Finding{Determined: true, Value: a.ReportedNoPath}
+}

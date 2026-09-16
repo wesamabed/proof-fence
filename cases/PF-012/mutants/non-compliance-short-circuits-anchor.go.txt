@@ -1,0 +1,37 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type ChangeRequest struct {
+	Subject    string
+	Generation int
+}
+
+type Observation struct {
+	Present    bool
+	Verified   bool
+	Subject    string
+	Generation int
+	Compliant  bool
+}
+
+// Acts on any reported non-compliance before asking what the report is about.
+func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
+	if obs.Present && obs.Verified && !obs.Compliant {
+		return Revoke
+	}
+	if !obs.Present || !obs.Verified {
+		return Quarantine
+	}
+	if obs.Subject != req.Subject || obs.Generation != req.Generation {
+		return Quarantine
+	}
+	return Retain
+}

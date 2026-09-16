@@ -1,4 +1,15 @@
 package challenge
 
-type Reachability struct{CallerSaysIsolated bool;ObservationPresent bool;ObservationAuthenticated bool;ObservedIsolated bool}
-func IsolationProven(r Reachability)bool{if r.CallerSaysIsolated{return true};return r.ObservedIsolated}
+type ContainmentInputs struct {
+	RequestField  bool
+	ProbeRecorded bool
+	ProbeVerified bool
+	ProbeResult   bool
+}
+
+func ContainmentEstablished(in ContainmentInputs) bool {
+	if in.RequestField {
+		return true
+	}
+	return in.ProbeResult
+}

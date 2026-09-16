@@ -1,6 +1,19 @@
 package challenge
 
-type Outcome string
-const(Succeeded Outcome="SUCCEEDED";Denied Outcome="DENIED";Failed Outcome="FAILED")
-type DeleteEvidence struct{Outcome Outcome;ErrorCode string;ResponseDeleted bool}
-func DeletionComplete(e DeleteEvidence)bool{return e.ResponseDeleted}
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RemovalResponse struct {
+	Result         Result
+	FaultCode      string
+	PayloadRemoved bool
+}
+
+func RemovalConfirmed(r RemovalResponse) bool {
+	return r.PayloadRemoved
+}

@@ -1,0 +1,52 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	return Quarantine
+}

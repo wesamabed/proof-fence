@@ -1,11 +1,17 @@
 {
   "id": "PF-005",
-  "title": "Withhold positives when the authenticated producer is missing",
+  "title": "Withhold a finding when no attributable analysis exists",
   "category": "closure",
-  "invariant": "A dependent positive fact is unknown unless its required producer exists and is authenticated.",
+  "decision_model": "three-valued-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A field read out of a record that does not exist, or that is not attributable to its stated producer, yields an undetermined finding rather than either a positive or a negative conclusion.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",
+  "mutants": "mutants",
   "public_safety": "synthetic",
-  "limitations": []
+  "limitations": [
+    "signature verification is modelled as a supplied boolean, not performed",
+    "three-valued fact output; this case is an input to an authority decision, not the decision itself"
+  ]
 }

@@ -1,0 +1,126 @@
+package challenge
+
+// Decision is ProofFence's four-valued authority decision. The four values mean
+// the same thing in every ProofFence authority-decision case.
+type Decision string
+
+const (
+	// Grant: the available evidence sufficiently establishes that new authority
+	// may safely be issued.
+	Grant Decision = "GRANT"
+	// Retain: the available evidence sufficiently establishes that existing
+	// authority should remain unchanged.
+	Retain Decision = "RETAIN"
+	// Revoke: the available evidence sufficiently establishes that authority
+	// should be removed.
+	Revoke Decision = "REVOKE"
+	// Quarantine: the available evidence does not support a safe final authority
+	// transition, or material evidence conflicts. Contain or withhold pending
+	// resolution.
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+// reportedState is the slot state the service's own report claims, derived from
+// the intent it was answering. The workflow issues INSTALL only from an empty
+// slot and REMOVE only from an occupied one, so a report that it carried the
+// request out claims the requested end state, and a report that it declined
+// claims the slot it started from. ERROR and a missing response claim nothing.
+func reportedState(intent Intent, report ApplyReport) (SlotState, bool) {
+	if !report.Returned {
+		return "", false
+	}
+	switch intent {
+	case Install:
+		switch report.Status {
+		case Applied:
+			return KeyPresent, true
+		case Rejected:
+			return KeyAbsent, true
+		}
+	case Remove:
+		switch report.Status {
+		case Applied:
+			return KeyAbsent, true
+		case Rejected:
+			return KeyPresent, true
+		}
+	}
+	return "", false
+}
+
+// RotationDecision decides one slot's trust-store entry from two independent
+// accounts of the same slot.
+//
+// The readback is the only account taken from the storage layer itself, and it
+// speaks only when a record was loaded, is attributable to the reader, and
+// decoded to a definite state. The service's report is its own account of what
+// it did; where it claims a state the readback denies, the two accounts cannot
+// both be right and no final transition is safe. Where neither account is
+// available -- an undecodable slot, an unattributable record, or a service that
+// could not say what happened -- the pass has not established anything to act
+// on. Only when both accounts agree does the slot's actual contents decide:
+// a key that is there after an install may be published, a key that is gone
+// after a removal must be withdrawn, and a slot still in the state it started
+// from means nothing changed.
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if !rb.Present || !rb.Verified {
+		return Quarantine
+	}
+	if rb.State != KeyPresent && rb.State != KeyAbsent {
+		return Quarantine
+	}
+	claimed, claims := reportedState(req.Intent, report)
+	if !claims || claimed != rb.State {
+		return Quarantine
+	}
+	switch req.Intent {
+	case Install:
+		if rb.State == KeyPresent {
+			return Grant
+		}
+		return Retain
+	default:
+		if rb.State == KeyAbsent {
+			return Revoke
+		}
+		return Retain
+	}
+}

@@ -8,7 +8,7 @@ import (
 )
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: proof-fence <list|materialize|grade|selftest> [args]")
+	fmt.Fprintln(os.Stderr, "usage: proof-fence <list|materialize|grade|selftest|mutation|toolchain> [args]")
 }
 
 func main() {
@@ -29,8 +29,15 @@ func main() {
 			os.Exit(1)
 		}
 		for _, c := range cases {
-			fmt.Printf("%s\t%s\t%s\n", c.ID, c.Category, c.Title)
+			fmt.Printf("%s\t%s\t%s\t%s\n", c.ID, c.Category, c.DecisionModel, c.Title)
 		}
+	case "toolchain":
+		tc, err := bench.DetectToolchain()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", tc)
 	case "materialize":
 		if len(os.Args) != 4 {
 			usage()
@@ -45,14 +52,28 @@ func main() {
 			usage()
 			os.Exit(2)
 		}
-		out, err := bench.Grade(root, os.Args[2], os.Args[3])
-		fmt.Print(out)
+		res, err := bench.Grade(root, os.Args[2], os.Args[3])
+		fmt.Print(res.Transcript)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+		}
+		// INFRASTRUCTURE is reported with its own exit code so a study can drop the
+		// trial instead of scoring it as a model failure.
+		switch res.Verdict {
+		case bench.VerdictPass:
+			os.Exit(0)
+		case bench.VerdictFail:
 			os.Exit(1)
+		default:
+			os.Exit(3)
 		}
 	case "selftest":
 		if err := bench.SelfTest(root, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	case "mutation":
+		if err := bench.MutationSuite(root, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}

@@ -1,0 +1,61 @@
+package challenge
+
+// Decision is ProofFence's four-valued authority decision. The four values mean
+// the same thing in every ProofFence authority-decision case.
+type Decision string
+
+const (
+	// Grant: the available evidence sufficiently establishes that new authority
+	// may safely be issued.
+	Grant Decision = "GRANT"
+	// Retain: the available evidence sufficiently establishes that existing
+	// authority should remain unchanged.
+	Retain Decision = "RETAIN"
+	// Revoke: the available evidence sufficiently establishes that authority
+	// should be removed.
+	Revoke Decision = "REVOKE"
+	// Quarantine: the available evidence does not support a safe final authority
+	// transition, or material evidence conflicts. Contain or withhold pending
+	// resolution.
+	Quarantine Decision = "QUARANTINE"
+)
+
+type ChangeRequest struct {
+	Subject    string
+	Generation int
+}
+
+type Observation struct {
+	Present    bool
+	Verified   bool
+	Subject    string
+	Generation int
+	Compliant  bool
+}
+
+// AuthorityDecision decides one subject's grant for one generation.
+//
+// The signature answers whether the checker really wrote this record. It does
+// not answer what the record is about: an observation carries the checker's
+// evaluation of the one subject and the one generation named inside it, and a
+// different generation is a different configuration that the platform allows to
+// differ arbitrarily. So an observation that verifies but names another subject
+// or another generation is evidence about something else, and evidence about
+// something else supports neither keeping nor removing this grant -- not even
+// when it reports non-compliance, because the non-compliance it reports is not
+// this configuration's.
+func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
+	if req.Subject == "" || req.Generation < 1 {
+		return Quarantine
+	}
+	if !obs.Present || !obs.Verified {
+		return Quarantine
+	}
+	if obs.Subject != req.Subject || obs.Generation != req.Generation {
+		return Quarantine
+	}
+	if obs.Compliant {
+		return Retain
+	}
+	return Revoke
+}

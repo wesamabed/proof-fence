@@ -1,0 +1,27 @@
+package challenge
+
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func set(names []string) map[string]bool {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+	return m
+}
+
+// Asks only whether a start event was observed.
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	ran := set(e.SupervisorRan)
+	for _, name := range required {
+		if !ran[name] {
+			return false
+		}
+	}
+	return true
+}

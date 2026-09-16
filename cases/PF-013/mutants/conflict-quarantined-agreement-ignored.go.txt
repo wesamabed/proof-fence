@@ -1,0 +1,90 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+func reportedState(intent Intent, report ApplyReport) (SlotState, bool) {
+	if !report.Returned {
+		return "", false
+	}
+	switch intent {
+	case Install:
+		switch report.Status {
+		case Applied:
+			return KeyPresent, true
+		case Rejected:
+			return KeyAbsent, true
+		}
+	case Remove:
+		switch report.Status {
+		case Applied:
+			return KeyAbsent, true
+		case Rejected:
+			return KeyPresent, true
+		}
+	}
+	return "", false
+}
+
+// Quarantines conflicts but then never reads the corroborated state, so a
+// coherent negative is treated as a completed transition.
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if !rb.Present || !rb.Verified {
+		return Quarantine
+	}
+	if rb.State != KeyPresent && rb.State != KeyAbsent {
+		return Quarantine
+	}
+	claimed, claims := reportedState(req.Intent, report)
+	if !claims || claimed != rb.State {
+		return Quarantine
+	}
+	if req.Intent == Install {
+		return Grant
+	}
+	return Revoke
+}

@@ -1,0 +1,20 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RemovalResponse struct {
+	Result         Result
+	FaultCode      string
+	PayloadRemoved bool
+}
+
+// Hard-codes the one fault identifier it happened to see.
+func RemovalConfirmed(r RemovalResponse) bool {
+	return r.Result == Succeeded && r.FaultCode != "ThrottlingException" && r.PayloadRemoved
+}

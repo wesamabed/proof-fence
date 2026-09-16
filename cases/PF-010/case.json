@@ -1,11 +1,17 @@
 {
   "id": "PF-010",
-  "title": "Require trusted execution evidence",
+  "title": "Establish execution only from independently observed events",
   "category": "execution-proof",
-  "invariant": "Candidate-authored run/pass claims cannot prove that required test bodies actually executed and passed.",
+  "decision_model": "boolean-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A report a process writes about itself cannot establish that the process did what it reports; only an independent observer's record of the events can, and it must cover every required name.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",
+  "mutants": "mutants",
   "public_safety": "synthetic",
-  "limitations": []
+  "limitations": [
+    "the supervisor's event stream is modelled as trustworthy input; stream integrity itself is out of scope",
+    "binary outcome: this case measures fact sufficiency, not an authority transition"
+  ]
 }

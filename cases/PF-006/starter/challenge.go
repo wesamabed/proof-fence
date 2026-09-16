@@ -1,4 +1,11 @@
 package challenge
 
-type VerifiedContext struct{Verified bool;RunID string;SubjectDigest string}
-func AuthorizedForRun(required string,c VerifiedContext)bool{return c.Verified}
+type Attestation struct {
+	SignatureValid bool
+	Scope          string
+	SubjectDigest  string
+}
+
+func AttestationSatisfies(requiredScope string, a Attestation) bool {
+	return a.SignatureValid
+}

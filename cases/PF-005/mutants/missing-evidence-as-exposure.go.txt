@@ -1,0 +1,21 @@
+package challenge
+
+type Finding struct {
+	Determined bool
+	Value      bool
+}
+
+type PathAnalysis struct {
+	Recorded       bool
+	SignatureValid bool
+	ReportedNoPath bool
+}
+
+// Fails shut in the wrong direction: reports missing evidence as a determined
+// exposure rather than as an undetermined finding.
+func PathFinding(a PathAnalysis) Finding {
+	if !a.Recorded || !a.SignatureValid {
+		return Finding{Determined: true, Value: false}
+	}
+	return Finding{Determined: true, Value: a.ReportedNoPath}
+}

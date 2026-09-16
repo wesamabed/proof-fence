@@ -1,0 +1,23 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+// Reads the count without asking whether a scan produced it.
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.Result == Succeeded && e.FaultCode == "" && e.PayloadRetired && e.InventoryCount == 0
+}

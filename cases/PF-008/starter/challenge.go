@@ -1,6 +1,22 @@
 package challenge
 
-type CleanupEvidence struct{DeleteOutcome Outcome;ErrorCode string;ResponseDeleted bool;ResidueObserved bool;ResidueAuthenticated bool;ResidueEmpty bool}
-type Outcome string
-const(Succeeded Outcome="SUCCEEDED";Denied Outcome="DENIED";Failed Outcome="FAILED")
-func CleanupComplete(e CleanupEvidence)bool{return e.ResponseDeleted&&e.ResidueEmpty}
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.PayloadRetired && e.InventoryCount == 0
+}

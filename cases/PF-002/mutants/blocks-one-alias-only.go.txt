@@ -1,0 +1,54 @@
+package challenge
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+)
+
+type Binding struct {
+	RunID      string `json:"run_id"`
+	Authorized bool   `json:"authorized"`
+}
+
+// Blocks the one case-folded alias it was shown and admits another.
+func ParseBinding(data []byte) (Binding, error) {
+	d := json.NewDecoder(bytes.NewReader(data))
+	t, e := d.Token()
+	if e != nil || t != json.Delim('{') {
+		return Binding{}, errors.New("object")
+	}
+	seen := map[string]bool{}
+	var b Binding
+	for d.More() {
+		k, _ := d.Token()
+		s := k.(string)
+		if s == "Run_ID" {
+			return Binding{}, errors.New("one blocked alias")
+		}
+		if seen[s] {
+			return Binding{}, fmt.Errorf("dup")
+		}
+		seen[s] = true
+		switch s {
+		case "run_id":
+			e = d.Decode(&b.RunID)
+		case "authorized", "Authorized":
+			e = d.Decode(&b.Authorized)
+		default:
+			return Binding{}, fmt.Errorf("unknown")
+		}
+		if e != nil {
+			return Binding{}, e
+		}
+	}
+	if _, e = d.Token(); e != nil {
+		return Binding{}, e
+	}
+	if _, e = d.Token(); e != io.EOF {
+		return Binding{}, errors.New("trailing")
+	}
+	return b, nil
+}

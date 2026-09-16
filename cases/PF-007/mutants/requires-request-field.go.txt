@@ -1,0 +1,13 @@
+package challenge
+
+type ContainmentInputs struct {
+	RequestField  bool
+	ProbeRecorded bool
+	ProbeVerified bool
+	ProbeResult   bool
+}
+
+// Requires the caller to agree with the measurement.
+func ContainmentEstablished(in ContainmentInputs) bool {
+	return in.RequestField && in.ProbeRecorded && in.ProbeVerified && in.ProbeResult
+}
