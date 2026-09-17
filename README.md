@@ -6,7 +6,7 @@ agents:
 > Does the agent promote evidence into a stronger authority conclusion than the
 > evidence supports?
 
-Version **v0.2** contains thirteen small Go challenges. Three of them
+Version **v0.3** contains thirteen small Go challenges. Three of them
 (PF-011–PF-013) are authority decisions with a four-valued outcome —
 `GRANT` / `RETAIN` / `REVOKE` / `QUARANTINE` — built around evidence that is
 genuinely incomplete, stale, or self-contradictory. The rest establish the kinds
@@ -69,6 +69,48 @@ PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 go run ./cmd/proof-fence grade PF-011 /tmp
 a build or execution timeout, or a toolchain failure. A study should drop
 infrastructure outcomes rather than score them as model failures.
 
+### Formal evaluation uses `evaluate`, never `grade`
+
+`grade` stops at the first failing fixture. That is fine as a quick check and
+useless as a study record: the rest of the fixture vector is never executed and
+is irrecoverable from the transcript. Two artifacts that fail the same case can
+look identical under `grade` and be very different implementations.
+
+```bash
+PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 \
+  go run ./cmd/proof-fence evaluate PF-011 /tmp/pf011
+
+PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 \
+  go run ./cmd/proof-fence evaluate-suite /tmp/solutions -out results.jsonl
+```
+
+`evaluate` runs **every** trusted fixture, records **every** outcome by name,
+tallies pass / fail / infrastructure separately, and emits JSON (JSONL for a
+suite). It marks a record `complete` only when no fixture hit the apparatus, so a
+study can drop incomplete trials without re-deriving the rule.
+
+### Run provenance
+
+ProofFence never calls a model, so it cannot observe which model produced a
+submission, under what settings, or at what cost. It defines the record instead
+and carries what a runner supplies:
+
+```bash
+go run ./cmd/proof-fence manifest > manifest.json   # fill in the model fields
+PROOF_FENCE_ALLOW_UNSANDBOXED_GRADE=1 \
+  go run ./cmd/proof-fence evaluate-suite /tmp/solutions -manifest manifest.json
+```
+
+The manifest covers provider, exact model identifier or snapshot, reasoning
+effort, prompt and system-prompt SHA-256, tool permissions, trial and
+randomization identity, UTC timing, token counts, API request ID, benchmark Git
+SHA, container image digest, exact Go toolchain, OS/arch, timeout settings,
+endpoint family and retention setting. Every field is optional, because a runner
+that cannot observe something should record nothing rather than a plausible
+guess — and **a result whose manifest carries no model identity supports no claim
+about any model.** The manifest never carries credentials, and `Validate` rejects
+a manifest that looks like it does.
+
 ## Cases
 
 | ID | Decision model | Property under test |
@@ -89,10 +131,13 @@ infrastructure outcomes rather than score them as model failures.
 
 ## Public pilot only
 
-Every case here is marked `"exposure": "PUBLIC_PILOT_ONLY"`. The cases, their
-references, and their graders are public, and they were authored with AI
-assistance — including by the model family a later study would evaluate. They are
-therefore contaminated for any clean confirmatory measurement of those models.
+Every case here is marked `"exposure": "PUBLIC_PILOT_ONLY"`: it is intended for
+public release and none of it is held out. The repository itself is private and
+has not been released, so "public" here describes the exposure class, not the
+current publication state. The cases, their references, and their graders are
+open within the repository, and they were authored with AI assistance —
+including by the model family a later study would evaluate. They are therefore
+contaminated for any clean confirmatory measurement of those models.
 
 Use them for methodology development, tooling validation, and worked examples.
 A confirmatory result requires a separately authored, permanently private
@@ -101,6 +146,7 @@ repository, and none should ever be added to it.**
 
 ## Documentation
 
+- [`docs/V0.2_BLIND_ORACLE_AUDIT.md`](docs/V0.2_BLIND_ORACLE_AUDIT.md) — **the benchmark's audit of itself: 20 of 138 v0.2 fixtures were underspecified, and what was repaired**
 - [`docs/AUTHORITY_DECISION_MODEL.md`](docs/AUTHORITY_DECISION_MODEL.md) — the four decisions, and why always-quarantine is penalised
 - [`docs/CONSTRUCT_VALIDITY.md`](docs/CONSTRUCT_VALIDITY.md) — what is measured, the v0.1 defect, and the per-case review
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — taxonomy, evaluation workflow, scoring
@@ -110,13 +156,30 @@ repository, and none should ever be added to it.**
 
 ## Status and limitations
 
-ProofFence v0.2 is a **pilot artifact**, not a validated scientific benchmark. It
+ProofFence v0.3 is a **pilot artifact**, not a validated scientific benchmark. It
 has thirteen synthetic public cases, binary pass/fail graders, and transparent
 reference implementations used for mechanical self-testing. It does not establish
 comparative novelty, model rankings, production safety, or causal claims about
 review methods.
 
-No baseline or model evaluation has been run against v0.2.
+### Evaluation status
+
+No confirmatory capability evaluation has been run against ProofFence, and none
+can be: every case here is a public pilot case, and authorship is exposure.
+
+One **exploratory instrument-validation pass** was graded against v0.2 on
+2026-09-17. Its run record captured four lines of metadata and **no model
+provenance at all** — no provider, no model identifier or snapshot, no reasoning
+effort, no prompt, no turn count and no timing. ProofFence therefore makes **no
+capability claim and no model attribution** on the basis of that pass, and does
+not name any model as its source, because the artifact does not establish one.
+
+What the pass was used for is the apparatus: it showed that the grader's
+first-failure transcript loses the rest of the fixture vector irrecoverably, and
+that a run record without model provenance cannot support any claim whatever.
+Both findings are repaired in v0.3 — `proof-fence evaluate` records the full
+per-fixture vector, and `proof-fence manifest` defines the provenance record a
+runner must populate before any result is reportable.
 
 A future study should use held-out cases, repeated trials, exact model/tool
 configuration records, blinded human adjudication, and raw-result release.

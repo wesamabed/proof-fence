@@ -1,12 +1,23 @@
 # Pilot evaluation protocol draft
 
-This is a protocol draft, not a completed or preregistered study. **No baseline
-or model evaluation has been run against ProofFence v0.2.**
+This is a protocol draft, not a completed or preregistered study. **No
+confirmatory capability evaluation has been run against ProofFence.**
+
+One exploratory instrument-validation pass was graded against v0.2 on 2026-09-17.
+Its run record carried no model provenance — no provider, model identifier,
+reasoning effort, prompt, turn count or timing — so **no capability or model
+attribution is made from it**, and this document names no model as its source.
+The pass is cited only for what it established about the apparatus: that a
+first-failure transcript destroys the rest of the fixture vector, and that a run
+record must be specified before it is collected, not after. The requirements in
+this protocol were tightened in response, and v0.3 enforces them in
+`proof-fence evaluate` and `proof-fence manifest`.
 
 ## Contamination boundary
 
-Every case in this repository is `"exposure": "PUBLIC_PILOT_ONLY"`. The cases,
-references, and graders are public and were authored with AI assistance,
+Every case in this repository is `"exposure": "PUBLIC_PILOT_ONLY"` — intended
+for release, with nothing held out; the repository itself is private and
+unreleased. The cases, references, and graders were authored with AI assistance,
 including by the model family a later study would evaluate.
 
 A pilot run against these cases can validate tooling, timing, prompts, and
@@ -44,6 +55,32 @@ permanently private held-out set with scoring preregistered before model runs.
 - confirmed security-defect detection rate;
 - residual-defect rate after correction;
 - false-positive reviewer finding rate.
+
+## Mandatory: record the full per-fixture vector
+
+**Every trial must be recorded with `proof-fence evaluate` or
+`proof-fence evaluate-suite`, for every case, not only the four-valued ones.**
+`proof-fence grade` stops at the first failing fixture, so its transcript is a
+prefix of the truth and the rest of the vector cannot be recovered afterwards.
+The 2026-09-17 instrument-validation pass demonstrated the cost directly: the
+same artifacts yielded one admissible failure when read from the grade logs and
+three when re-evaluated across the full vector.
+
+An `evaluate` record carries every fixture by name with its own verdict, the
+pass / fail / infrastructure tallies, and a `complete` flag that is false when
+any fixture hit the apparatus. Report per-fixture results alongside the
+all-or-nothing case verdict. A single contested fixture flips a whole case under
+all-or-nothing scoring, so a case-level number alone can turn one disputed
+fixture into an apparent total failure.
+
+## Mandatory: record run provenance before the run, not after
+
+Generate the manifest with `proof-fence manifest`, fill in the model fields, and
+pass it to `evaluate`/`evaluate-suite`. A result whose manifest carries no
+provider and no exact model identifier supports **no claim about any model**,
+regardless of what the directory it was found in is called. Leave a field empty
+when the runner cannot observe it; an empty field is an honest record where a
+default would be a fabricated one.
 
 ## Authority-decision outcomes
 

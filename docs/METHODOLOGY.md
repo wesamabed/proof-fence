@@ -133,6 +133,41 @@ itself an error.
 that the grader must kill. A survivor means the grader does not discriminate the
 behaviour the case claims to measure. The same suite runs under `go test ./...`.
 
+### What a mutation score establishes, and what it does not
+
+A killed mutant establishes that **this grader is sensitive to this mutant**. It
+does not establish that the grader is **correct**, and the suite's own structure
+is why.
+
+The suite's pass criterion is `survivors = 0`. Every committed mutant is
+therefore, by construction, something the grader is required to kill. So if a
+**defensible alternative reading** of a task — an implementation a competent
+reader could justify from the published text — is committed as a mutant, the
+suite records its rejection as a *discrimination success*. Mutation testing
+applied to a benchmark grader does not merely fail to detect oracle ambiguity:
+it converts oracle ambiguity into a reported quality signal.
+
+This is not hypothetical here. ProofFence v0.2 scored **78 killed / 0
+survivors**, and an independent blind audit of the same artifact then found 20 of
+its 138 fixtures underspecified — with **four committed mutants being exactly the
+defensible alternative that produced their case's contested fixture**. The full
+finding is in [`V0.2_BLIND_ORACLE_AUDIT.md`](V0.2_BLIND_ORACLE_AUDIT.md).
+
+Two consequences are built into v0.3:
+
+1. **Every mutant carries a recorded kind.** `cases/<ID>/mutants/classification.json`
+   labels each committed mutant `degenerate-strategy`, `mutation`, or
+   `alternative-reading-probe`, and `proof-fence mutation` prints the kind beside
+   every result and the totals by kind. The classification is **adjudicated data,
+   not a computed property**: deciding whether an implementation is a defensible
+   reading of a task requires reading the task and judging what its text entails,
+   and no classifier in this repository attempts that. A mutant with no recorded
+   kind fails the suite.
+2. **The caveat travels with the number.** `proof-fence mutation` prints, on every
+   run, that a killed mutant shows sensitivity rather than correctness and that
+   oracle validity is established by independent specification audit. Any
+   reporting of a ProofFence mutation score must carry the same qualification.
+
 ## Exact-delta review condition
 
 A review study can compare:
