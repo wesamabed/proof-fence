@@ -1,0 +1,113 @@
+package challenge
+
+import "testing"
+
+func decide(status PurgeStatus, retrieved bool, items []string, cursor string) Decision {
+	return CleanupDecision(CleanupEvidence{
+		Purge: PurgeReport{Status: status},
+		Page:  ResiduePage{Retrieved: retrieved, Items: items, NextCursor: cursor},
+	})
+}
+
+func want(t *testing.T, got, expected Decision, what string) {
+	t.Helper()
+	if got != expected {
+		t.Fatalf("%s: got %s, want %s", what, got, expected)
+	}
+}
+
+func TestCompletedPurgeAndProvenEmpty(t *testing.T) {
+	want(t, decide(Completed, true, nil, ""), Revoke,
+		"a completed purge with a final page naming nothing")
+}
+
+func TestCompletedPurgeAndProvenEmptyExplicitSlice(t *testing.T) {
+	want(t, decide(Completed, true, []string{}, ""), Revoke,
+		"a completed purge with an explicitly empty final page")
+}
+
+func TestEmptyPageCarryingACursor(t *testing.T) {
+	want(t, decide(Completed, true, nil, "cursor-2"), Quarantine,
+		"a completed purge with an empty page that carries a continuation cursor")
+}
+
+func TestEmptyPageCarryingACursorAfterManyPages(t *testing.T) {
+	want(t, decide(Completed, true, []string{}, "eyJrIjoiYSJ9"), Quarantine,
+		"a completed purge with an empty page that carries an opaque continuation cursor")
+}
+
+func TestResidueOnAFinalPage(t *testing.T) {
+	want(t, decide(Completed, true, []string{"logs/2026-01-02.json"}, ""), Retain,
+		"a completed purge with objects still named on the final page")
+}
+
+func TestResidueOnANonFinalPage(t *testing.T) {
+	want(t, decide(Completed, true, []string{"logs/a", "logs/b"}, "cursor-2"), Retain,
+		"a completed purge with objects named on a non-final page")
+}
+
+func TestListingDidNotComeBack(t *testing.T) {
+	want(t, decide(Completed, false, nil, ""), Quarantine,
+		"a completed purge with no listing page at all")
+}
+
+func TestListingDidNotComeBackWithStaleItems(t *testing.T) {
+	want(t, decide(Completed, false, []string{"logs/a"}, ""), Quarantine,
+		"a completed purge with no listing page but a populated item slice")
+}
+
+func TestRejectedPurgeWithProvenEmptyWorkspace(t *testing.T) {
+	want(t, decide(Rejected, true, nil, ""), Retain,
+		"a declined purge, even with a final page naming nothing")
+}
+
+func TestRejectedPurgeWithResidue(t *testing.T) {
+	want(t, decide(Rejected, true, []string{"logs/a"}, ""), Retain,
+		"a declined purge with objects still present")
+}
+
+func TestRejectedPurgeWithNoListing(t *testing.T) {
+	want(t, decide(Rejected, false, nil, ""), Retain,
+		"a declined purge with no listing page")
+}
+
+func TestFailedPurgeWithProvenEmptyWorkspace(t *testing.T) {
+	want(t, decide(Failed, true, nil, ""), Retain,
+		"an abandoned purge, even with a final page naming nothing")
+}
+
+func TestFailedPurgeWithEmptyPageAndCursor(t *testing.T) {
+	want(t, decide(Failed, true, nil, "cursor-2"), Retain,
+		"an abandoned purge with an inconclusive listing")
+}
+
+func TestUnmodelledPurgeStatus(t *testing.T) {
+	want(t, decide(PurgeStatus("PARTIALLY_COMPLETED"), true, nil, ""), Quarantine,
+		"a purge status this client release does not model")
+}
+
+func TestEmptyPurgeStatus(t *testing.T) {
+	want(t, decide(PurgeStatus(""), true, nil, ""), Quarantine,
+		"a purge report carrying no status")
+}
+
+func TestNoEvidenceAtAll(t *testing.T) {
+	want(t, CleanupDecision(CleanupEvidence{}), Quarantine,
+		"an empty evidence value")
+}
+
+func TestGrantIsNeverCorrectHere(t *testing.T) {
+	states := []Decision{
+		decide(Completed, true, nil, ""),
+		decide(Completed, true, nil, "c"),
+		decide(Completed, true, []string{"x"}, ""),
+		decide(Rejected, true, nil, ""),
+		decide(Failed, false, nil, ""),
+		decide(PurgeStatus("?"), true, nil, ""),
+	}
+	for i, d := range states {
+		if d == Grant {
+			t.Fatalf("state %d issued a new cleanup role to a workspace that already holds one", i)
+		}
+	}
+}

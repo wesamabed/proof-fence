@@ -1,0 +1,147 @@
+package challenge
+
+import "testing"
+
+func req(subject string, generation int) ChangeRequest {
+	return ChangeRequest{Subject: subject, Generation: generation}
+}
+
+func want(t *testing.T, got, expected Decision, what string) {
+	t.Helper()
+	if got != expected {
+		t.Fatalf("%s: got %s, want %s", what, got, expected)
+	}
+}
+
+func TestFreshMatchingCompliantObservation(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Retain,
+		"an attributable observation of this subject at this generation reporting compliance")
+}
+
+func TestFreshMatchingNonCompliantObservation(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 7, Compliant: false}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Revoke,
+		"an attributable observation of this subject at this generation reporting non-compliance")
+}
+
+func TestPreviousGenerationCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 6, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an attributable observation of the previous generation reporting compliance")
+}
+
+func TestPreviousGenerationNonCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 6, Compliant: false}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an attributable observation of the previous generation reporting non-compliance")
+}
+
+func TestLaterGenerationCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 8, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an attributable observation of a later generation")
+}
+
+func TestWrongSubjectCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-b", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an attributable observation of a different subject reporting compliance")
+}
+
+func TestWrongSubjectNonCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-b", Generation: 7, Compliant: false}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an attributable observation of a different subject reporting non-compliance")
+}
+
+func TestUnverifiedMatchingObservation(t *testing.T) {
+	obs := Observation{Present: true, Verified: false, Subject: "svc-a", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"a matching observation whose signature did not verify")
+}
+
+func TestUnverifiedMatchingNonCompliantObservation(t *testing.T) {
+	obs := Observation{Present: true, Verified: false, Subject: "svc-a", Generation: 7, Compliant: false}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an unverifiable observation reporting non-compliance")
+}
+
+func TestNoObservation(t *testing.T) {
+	want(t, AuthorityDecision(req("svc-a", 7), Observation{}), Quarantine,
+		"a pass with no observation record at all")
+}
+
+func TestAbsentObservationWithPopulatedFields(t *testing.T) {
+	obs := Observation{Present: false, Verified: true, Subject: "svc-a", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an observation that was not loaded but whose fields are populated")
+}
+
+func TestSubjectComparisonIsLiteral(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "SVC-A", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 7), obs), Quarantine,
+		"an observation whose subject differs only by case")
+}
+
+func TestEmptySubjectMatchesLiterally(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("", 7), obs), Retain,
+		"a request and an attributable compliant observation naming the same empty subject identifier")
+}
+
+func TestEmptySubjectAgainstANamedSubject(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("", 7), obs), Quarantine,
+		"a request naming the empty subject identifier with an observation of a different subject")
+}
+
+func TestRequestWithoutAGeneration(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 0, Compliant: true}
+	want(t, AuthorityDecision(req("svc-a", 0), obs), Quarantine,
+		"a request naming no generation")
+}
+
+func TestSecondSubjectCompliantStillDecidable(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-z", Generation: 1, Compliant: true}
+	want(t, AuthorityDecision(req("svc-z", 1), obs), Retain,
+		"an attributable first-generation observation reporting compliance")
+}
+
+func TestOpaqueSubjectAtAHighGenerationCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "tenant/9f3c-4a17", Generation: 4096, Compliant: true}
+	want(t, AuthorityDecision(req("tenant/9f3c-4a17", 4096), obs), Retain,
+		"an attributable observation of an opaque subject at a high generation reporting compliance")
+}
+
+func TestOpaqueSubjectAtAHighGenerationNonCompliant(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "tenant/9f3c-4a17", Generation: 4096, Compliant: false}
+	want(t, AuthorityDecision(req("tenant/9f3c-4a17", 4096), obs), Revoke,
+		"an attributable observation of an opaque subject at a high generation reporting non-compliance")
+}
+
+func TestOpaqueSubjectOneGenerationBehind(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "tenant/9f3c-4a17", Generation: 4095, Compliant: true}
+	want(t, AuthorityDecision(req("tenant/9f3c-4a17", 4096), obs), Quarantine,
+		"an attributable observation of an opaque subject one generation behind")
+}
+
+func TestSecondSubjectStillDecidable(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-z", Generation: 1, Compliant: false}
+	want(t, AuthorityDecision(req("svc-z", 1), obs), Revoke,
+		"an attributable first-generation observation reporting non-compliance")
+}
+
+func TestGrantIsNeverCorrectHere(t *testing.T) {
+	states := []Decision{
+		AuthorityDecision(req("svc-a", 7), Observation{true, true, "svc-a", 7, true}),
+		AuthorityDecision(req("svc-a", 7), Observation{true, true, "svc-a", 7, false}),
+		AuthorityDecision(req("svc-a", 7), Observation{true, true, "svc-a", 6, true}),
+		AuthorityDecision(req("svc-a", 7), Observation{}),
+	}
+	for i, d := range states {
+		if d == Grant {
+			t.Fatalf("state %d issued a grant to a subject that already holds one", i)
+		}
+	}
+}

@@ -1,0 +1,27 @@
+package challenge
+
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func set(names []string) map[string]bool {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+	return m
+}
+
+// Reads the job summary file as the record of what happened.
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	passed := set(e.SelfReportPassed)
+	for _, name := range required {
+		if !passed[name] {
+			return false
+		}
+	}
+	return true
+}

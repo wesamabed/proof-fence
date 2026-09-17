@@ -1,0 +1,65 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+// Decides from what the key service says it did.
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if !report.Returned {
+		return Quarantine
+	}
+	switch report.Status {
+	case Applied:
+		if req.Intent == Install {
+			return Grant
+		}
+		return Revoke
+	case Rejected:
+		return Retain
+	}
+	return Quarantine
+}

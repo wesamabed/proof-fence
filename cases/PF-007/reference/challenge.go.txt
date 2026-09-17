@@ -1,4 +1,21 @@
 package challenge
 
-type Reachability struct{CallerSaysIsolated bool;ObservationPresent bool;ObservationAuthenticated bool;ObservedIsolated bool}
-func IsolationProven(r Reachability)bool{return r.ObservationPresent&&r.ObservationAuthenticated&&r.ObservedIsolated}
+type ContainmentInputs struct {
+	RequestField  bool
+	ProbeRecorded bool
+	ProbeVerified bool
+	ProbeResult   bool
+}
+
+// ContainmentEstablished reports whether the subject's containment has actually
+// been established.
+//
+// Containment is a measured property of the network. The request field is
+// whatever the caller typed, and the caller is on the other side of the boundary
+// being asserted about, so it can neither establish containment nor rebut a
+// measurement. Only the probe measures; and because the loader assembles the
+// probe fields without cross-checking them, a measurement counts only when a
+// record exists, is attributable to the probe fleet, and reports containment.
+func ContainmentEstablished(in ContainmentInputs) bool {
+	return in.ProbeRecorded && in.ProbeVerified && in.ProbeResult
+}

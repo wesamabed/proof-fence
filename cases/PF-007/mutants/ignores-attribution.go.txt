@@ -1,0 +1,13 @@
+package challenge
+
+type ContainmentInputs struct {
+	RequestField  bool
+	ProbeRecorded bool
+	ProbeVerified bool
+	ProbeResult   bool
+}
+
+// Accepts any stored probe record without checking attribution.
+func ContainmentEstablished(in ContainmentInputs) bool {
+	return in.ProbeRecorded && in.ProbeResult
+}

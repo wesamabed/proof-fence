@@ -1,11 +1,17 @@
 {
   "id": "PF-007",
-  "title": "Do not promote caller assertions into observed security facts",
+  "title": "Establish containment only from an attributable measurement",
   "category": "provenance",
-  "invariant": "A caller-authored assertion cannot substitute for the required authenticated observation.",
+  "decision_model": "boolean-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A field the requesting party controls cannot establish a measured property of the boundary it sits behind, nor rebut an attributable measurement of it.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",
+  "mutants": "mutants",
   "public_safety": "synthetic",
-  "limitations": []
+  "limitations": [
+    "signature verification is modelled as a supplied boolean, not performed",
+    "probe freshness is out of scope for this case; see PF-012 for evidence anchoring"
+  ]
 }

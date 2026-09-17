@@ -1,0 +1,23 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+// Consults only the inventory scan, never the registry.
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.InventoryRecorded && e.InventoryVerified && e.InventoryCount == 0
+}

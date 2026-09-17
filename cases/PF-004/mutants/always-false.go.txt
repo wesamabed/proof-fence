@@ -1,0 +1,19 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RemovalResponse struct {
+	Result         Result
+	FaultCode      string
+	PayloadRemoved bool
+}
+
+func RemovalConfirmed(r RemovalResponse) bool {
+	return false
+}

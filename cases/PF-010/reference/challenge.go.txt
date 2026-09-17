@@ -1,4 +1,36 @@
 package challenge
 
-type ExecutionEvidence struct{ClaimedRun []string;ClaimedPass []string;TrustedObservedRun []string;TrustedObservedPass []string}
-func ExecutionProven(required []string,e ExecutionEvidence)bool{run:=map[string]bool{};pass:=map[string]bool{};for _,x:=range e.TrustedObservedRun{run[x]=true};for _,x:=range e.TrustedObservedPass{pass[x]=true};for _,x:=range required{if !run[x]||!pass[x]{return false}};return true}
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func set(names []string) map[string]bool {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+	return m
+}
+
+// ExecutionEstablished reports whether every required test really ran and really
+// passed in this run.
+//
+// The summary file is written by the same code the pull request may have
+// changed, so it records what that code chose to say, not what happened; it can
+// therefore corroborate the run but never establish it. The supervisor's lists
+// are the only record of observed events. Because those two lists accumulate
+// independently and a truncated stream can leave them inconsistent, a required
+// test counts only when the supervisor observed both its start and its success.
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	ran := set(e.SupervisorRan)
+	passed := set(e.SupervisorPassed)
+	for _, name := range required {
+		if !ran[name] || !passed[name] {
+			return false
+		}
+	}
+	return true
+}

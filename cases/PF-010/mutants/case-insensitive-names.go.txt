@@ -1,0 +1,41 @@
+package challenge
+
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func set(names []string) map[string]bool {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+	return m
+}
+
+// Normalizes case before comparing names.
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	lower := func(in []string) []string {
+		out := make([]string, 0, len(in))
+		for _, s := range in {
+			b := []byte(s)
+			for i := range b {
+				if b[i] >= 65 && b[i] <= 90 {
+					b[i] += 32
+				}
+			}
+			out = append(out, string(b))
+		}
+		return out
+	}
+	ran := set(lower(e.SupervisorRan))
+	passed := set(lower(e.SupervisorPassed))
+	for _, name := range lower(required) {
+		if !ran[name] || !passed[name] {
+			return false
+		}
+	}
+	return true
+}

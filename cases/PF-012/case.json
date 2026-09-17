@@ -1,0 +1,18 @@
+{
+  "id": "PF-012",
+  "title": "Decide a grant when the only attestation is anchored elsewhere",
+  "category": "authority-decision",
+  "decision_model": "four-valued-authority",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "Cryptographic attributability establishes who produced an observation, not what the observation is about; an observation anchored to another subject or another generation supports neither a positive nor a negative authority transition for this one.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "mutants": "mutants",
+  "public_safety": "synthetic",
+  "limitations": [
+    "GRANT is not reachable in this case: every subject already holds a grant",
+    "signature verification is modelled as a supplied boolean, not performed",
+    "generation ordering is modelled as integer equality; real anchoring may use digests or epochs"
+  ]
+}

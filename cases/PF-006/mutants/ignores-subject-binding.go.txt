@@ -1,0 +1,12 @@
+package challenge
+
+type Attestation struct {
+	SignatureValid bool
+	Scope          string
+	SubjectDigest  string
+}
+
+// Matches the scope but accepts an unbound statement.
+func AttestationSatisfies(requiredScope string, a Attestation) bool {
+	return requiredScope != "" && a.SignatureValid && a.Scope == requiredScope
+}

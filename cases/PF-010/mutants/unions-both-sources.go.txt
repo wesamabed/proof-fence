@@ -1,0 +1,28 @@
+package challenge
+
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func set(names []string) map[string]bool {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+	return m
+}
+
+// Accepts a required test if either source names it.
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	ran := set(append(append([]string{}, e.SupervisorRan...), e.SelfReportRan...))
+	passed := set(append(append([]string{}, e.SupervisorPassed...), e.SelfReportPassed...))
+	for _, name := range required {
+		if !ran[name] || !passed[name] {
+			return false
+		}
+	}
+	return true
+}

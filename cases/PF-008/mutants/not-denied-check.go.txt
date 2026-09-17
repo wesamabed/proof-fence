@@ -1,0 +1,24 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+// Treats any classification that is not an explicit denial as a success.
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.Result != Denied && e.FaultCode == "" && e.PayloadRetired &&
+		e.InventoryRecorded && e.InventoryVerified && e.InventoryCount == 0
+}

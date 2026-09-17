@@ -1,11 +1,18 @@
 {
   "id": "PF-008",
-  "title": "Require coherent cleanup and residue evidence",
+  "title": "Confirm an irreversible retirement only from two coherent subsystems",
   "category": "coherence",
-  "invariant": "Destructive cleanup is complete only when deletion and residue observations are both present and mutually coherent.",
+  "decision_model": "boolean-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "An irreversible step requires each independent subsystem to have positively reported what the step assumes; a zero-valued field from a subsystem that produced no record is not a measurement of zero.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",
+  "mutants": "mutants",
   "public_safety": "synthetic",
-  "limitations": []
+  "limitations": [
+    "the inventory scan is modelled as complete; enumeration completeness is exercised separately in PF-011",
+    "binary outcome: this case measures fact sufficiency, not an authority transition",
+    "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
+  ]
 }

@@ -2,10 +2,13 @@
   "id": "PF-002",
   "title": "Require exact JSON member spelling",
   "category": "admission",
+  "decision_model": "parse-result",
+  "exposure": "PUBLIC_PILOT_ONLY",
   "invariant": "Case-folded aliases must not satisfy an exact security vocabulary or coexist as a decoy beside the exact member.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",
+  "mutants": "mutants",
   "public_safety": "synthetic",
   "limitations": []
 }

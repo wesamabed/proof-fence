@@ -1,5 +1,16 @@
 package challenge
 
-type Fact struct{Known bool;Value bool}
-type Evidence struct{ProducerPresent bool;Authenticated bool;DerivedSafe bool}
-func NetworkSafety(e Evidence)Fact{return Fact{Known:true,Value:e.DerivedSafe}}
+type Finding struct {
+	Determined bool
+	Value      bool
+}
+
+type PathAnalysis struct {
+	Recorded       bool
+	SignatureValid bool
+	ReportedNoPath bool
+}
+
+func PathFinding(a PathAnalysis) Finding {
+	return Finding{Determined: true, Value: a.ReportedNoPath}
+}

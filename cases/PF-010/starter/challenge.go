@@ -1,4 +1,21 @@
 package challenge
 
-type ExecutionEvidence struct{ClaimedRun []string;ClaimedPass []string;TrustedObservedRun []string;TrustedObservedPass []string}
-func ExecutionProven(required []string,e ExecutionEvidence)bool{m:=map[string]bool{};for _,x:=range e.ClaimedPass{m[x]=true};for _,x:=range required{if !m[x]{return false}};return true}
+type ExecutionEvidence struct {
+	SelfReportRan    []string
+	SelfReportPassed []string
+	SupervisorRan    []string
+	SupervisorPassed []string
+}
+
+func ExecutionEstablished(required []string, e ExecutionEvidence) bool {
+	passed := map[string]bool{}
+	for _, name := range e.SelfReportPassed {
+		passed[name] = true
+	}
+	for _, name := range required {
+		if !passed[name] {
+			return false
+		}
+	}
+	return true
+}

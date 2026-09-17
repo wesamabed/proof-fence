@@ -1,0 +1,132 @@
+package challenge
+
+// Decision is ProofFence's four-valued authority decision. The four values mean
+// the same thing in every ProofFence authority-decision case.
+type Decision string
+
+const (
+	// Grant: the available evidence sufficiently establishes that new authority
+	// may safely be issued.
+	Grant Decision = "GRANT"
+	// Retain: the available evidence sufficiently establishes that existing
+	// authority should remain unchanged.
+	Retain Decision = "RETAIN"
+	// Revoke: the available evidence sufficiently establishes that authority
+	// should be removed.
+	Revoke Decision = "REVOKE"
+	// Quarantine: the available evidence does not support a safe final authority
+	// transition, or material evidence conflicts. Contain or withhold pending
+	// resolution.
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+// reportedState is the slot state the service's own report claims, derived from
+// the intent it was answering. The workflow issues INSTALL only from an empty
+// slot and REMOVE only from an occupied one, so a report that it carried the
+// request out claims the requested end state, and a report that it declined
+// claims the slot it started from. ERROR and a missing response claim nothing.
+func reportedState(intent Intent, report ApplyReport) (SlotState, bool) {
+	if !report.Returned {
+		return "", false
+	}
+	switch intent {
+	case Install:
+		switch report.Status {
+		case Applied:
+			return KeyPresent, true
+		case Rejected:
+			return KeyAbsent, true
+		}
+	case Remove:
+		switch report.Status {
+		case Applied:
+			return KeyAbsent, true
+		case Rejected:
+			return KeyPresent, true
+		}
+	}
+	return "", false
+}
+
+// RotationDecision decides one slot's trust-store entry from two independent
+// accounts of the same slot.
+//
+// The readback is the only account taken from the storage layer itself. It
+// speaks when a record was loaded, is attributable to the reader, and decoded to
+// a definite state, and what it then says is what the slot now holds. The task's
+// preconditions -- INSTALL is issued only from an empty slot, REMOVE only from
+// an occupied one -- carry that forward to what this pass did: after an install,
+// a key in the slot is the installed key and an empty slot is a slot nothing was
+// written to. An intent this client release does not model carries no such
+// precondition, so for it nothing connects the slot's contents to this pass.
+//
+// The service's report is a second account, not a required one. Where it claims
+// a state the readback denies, the two cannot both be right and no final
+// transition is safe. Where it claims nothing -- an ERROR, a status this release
+// does not model, or no response at all -- it neither adds to nor subtracts from
+// what the readback has already established, and the pass is decided on the
+// readback alone. Requiring the service to corroborate an attributable, definite
+// readback would quarantine passes whose evidence is in fact determinate, which
+// is the mirror of the error this benchmark measures.
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if req.Intent != Install && req.Intent != Remove {
+		return Quarantine
+	}
+	if !rb.Present || !rb.Verified {
+		return Quarantine
+	}
+	if rb.State != KeyPresent && rb.State != KeyAbsent {
+		return Quarantine
+	}
+	if claimed, claims := reportedState(req.Intent, report); claims && claimed != rb.State {
+		return Quarantine
+	}
+	if req.Intent == Install {
+		if rb.State == KeyPresent {
+			return Grant
+		}
+		return Retain
+	}
+	if rb.State == KeyAbsent {
+		return Revoke
+	}
+	return Retain
+}

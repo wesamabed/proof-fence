@@ -1,0 +1,41 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type ChangeRequest struct {
+	Subject    string
+	Generation int
+}
+
+type Observation struct {
+	Present    bool
+	Verified   bool
+	Subject    string
+	Generation int
+	Compliant  bool
+}
+
+// Fails shut by removing access whenever evidence is missing, rather than
+// containing the subject pending resolution.
+func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
+	if req.Subject == "" || req.Generation < 1 {
+		return Revoke
+	}
+	if !obs.Present || !obs.Verified {
+		return Revoke
+	}
+	if obs.Subject != req.Subject || obs.Generation != req.Generation {
+		return Revoke
+	}
+	if obs.Compliant {
+		return Retain
+	}
+	return Revoke
+}

@@ -1,7 +1,107 @@
 package challenge
+
 import "testing"
-func TestTrusted(t *testing.T){e:=ExecutionEvidence{[]string{"A"},[]string{"A"},[]string{"A"},[]string{"A"}};if !ExecutionProven([]string{"A"},e){t.Fatal("trusted execution rejected")}}
-func TestClaimsCannotSubstitute(t *testing.T){e:=ExecutionEvidence{[]string{"A"},[]string{"A"},nil,nil};if ExecutionProven([]string{"A"},e){t.Fatal("candidate claim proved execution")}}
-func TestRunWithoutTrustedPass(t *testing.T){e:=ExecutionEvidence{nil,nil,[]string{"A"},nil};if ExecutionProven([]string{"A"},e){t.Fatal("run without trusted pass accepted")}}
-func TestTrustedPassWithoutRun(t *testing.T){e:=ExecutionEvidence{nil,nil,nil,[]string{"A"}};if ExecutionProven([]string{"A"},e){t.Fatal("trusted pass without trusted run accepted")}}
-func TestAllRequired(t *testing.T){e:=ExecutionEvidence{nil,nil,[]string{"A"},[]string{"A"}};if ExecutionProven([]string{"A","B"},e){t.Fatal("partial trusted execution accepted")}}
+
+func TestObservedRunAndPass(t *testing.T) {
+	e := ExecutionEvidence{
+		SelfReportRan:    []string{"TestAuthz"},
+		SelfReportPassed: []string{"TestAuthz"},
+		SupervisorRan:    []string{"TestAuthz"},
+		SupervisorPassed: []string{"TestAuthz"},
+	}
+	if !ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("an independently observed run and pass was rejected")
+	}
+}
+
+func TestSelfReportAlone(t *testing.T) {
+	e := ExecutionEvidence{
+		SelfReportRan:    []string{"TestAuthz"},
+		SelfReportPassed: []string{"TestAuthz"},
+	}
+	if ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("the job's own summary file established execution on its own")
+	}
+}
+
+func TestSelfReportContradictsSupervisor(t *testing.T) {
+	e := ExecutionEvidence{
+		SelfReportRan:    []string{"TestAuthz", "TestCrypto"},
+		SelfReportPassed: []string{"TestAuthz", "TestCrypto"},
+		SupervisorRan:    []string{"TestCrypto"},
+		SupervisorPassed: []string{"TestCrypto"},
+	}
+	if ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("a summary file naming a test the supervisor never observed established execution")
+	}
+}
+
+func TestObservedStartWithoutObservedSuccess(t *testing.T) {
+	e := ExecutionEvidence{SupervisorRan: []string{"TestAuthz"}}
+	if ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("an observed start with no observed success established execution")
+	}
+}
+
+func TestObservedSuccessWithoutObservedStart(t *testing.T) {
+	e := ExecutionEvidence{SupervisorPassed: []string{"TestAuthz"}}
+	if ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("an observed success with no observed start established execution")
+	}
+}
+
+func TestPartialCoverage(t *testing.T) {
+	e := ExecutionEvidence{
+		SupervisorRan:    []string{"TestAuthz"},
+		SupervisorPassed: []string{"TestAuthz"},
+	}
+	if ExecutionEstablished([]string{"TestAuthz", "TestCrypto"}, e) {
+		t.Fatal("a run covering only some required tests established execution")
+	}
+}
+
+func TestOneRequiredTestTruncated(t *testing.T) {
+	e := ExecutionEvidence{
+		SupervisorRan:    []string{"TestAuthz", "TestCrypto"},
+		SupervisorPassed: []string{"TestAuthz"},
+	}
+	if ExecutionEstablished([]string{"TestAuthz", "TestCrypto"}, e) {
+		t.Fatal("a truncated event stream established execution for the missing test")
+	}
+}
+
+func TestExtraObservationsAllowed(t *testing.T) {
+	e := ExecutionEvidence{
+		SupervisorRan:    []string{"TestUnrelated", "TestAuthz", "TestCrypto"},
+		SupervisorPassed: []string{"TestCrypto", "TestUnrelated", "TestAuthz"},
+	}
+	if !ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("observations of tests beyond the required set were treated as disqualifying")
+	}
+}
+
+func TestAllRequiredObserved(t *testing.T) {
+	e := ExecutionEvidence{
+		SupervisorRan:    []string{"TestAuthz", "TestCrypto"},
+		SupervisorPassed: []string{"TestAuthz", "TestCrypto"},
+	}
+	if !ExecutionEstablished([]string{"TestAuthz", "TestCrypto"}, e) {
+		t.Fatal("a run in which every required test was observed to start and succeed was rejected")
+	}
+}
+
+func TestNoEvidenceAtAll(t *testing.T) {
+	if ExecutionEstablished([]string{"TestAuthz"}, ExecutionEvidence{}) {
+		t.Fatal("execution was established with no evidence at all")
+	}
+}
+
+func TestNameComparisonIsLiteral(t *testing.T) {
+	e := ExecutionEvidence{
+		SupervisorRan:    []string{"testauthz"},
+		SupervisorPassed: []string{"testauthz"},
+	}
+	if ExecutionEstablished([]string{"TestAuthz"}, e) {
+		t.Fatal("a differently spelled test name satisfied a literal comparison")
+	}
+}
