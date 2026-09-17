@@ -41,12 +41,12 @@ is established by independent specification audit, not by this number. See
 [`docs/V0.2_BLIND_ORACLE_AUDIT.md`](docs/V0.2_BLIND_ORACLE_AUDIT.md).
 
 ## Contamination status
-Every case is `"exposure": "PUBLIC_PILOT_ONLY"` — intended for release, nothing
-held out. The repository is private and unreleased, so the label is an exposure
-class, not a statement that the material is already published. Cases, references,
-and graders were authored with AI assistance, including by the model family a
-later study would evaluate. They cannot support a confirmatory claim about those
-models. No held-out confirmatory set exists in this repository.
+Every case is `"exposure": "PUBLIC_PILOT_ONLY"`: the repository and its cases,
+references, graders, and audit history are public methodology material, with
+nothing held out. They were authored with AI assistance, including by the model
+family a later study would evaluate. They therefore cannot support a clean
+confirmatory claim about those models. No held-out confirmatory set exists in
+this repository.
 
 ## Out of scope
 Exploit development, penetration testing of third-party systems, malware

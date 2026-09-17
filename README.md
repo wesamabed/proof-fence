@@ -131,13 +131,13 @@ a manifest that looks like it does.
 
 ## Public pilot only
 
-Every case here is marked `"exposure": "PUBLIC_PILOT_ONLY"`: it is intended for
-public release and none of it is held out. The repository itself is private and
-has not been released, so "public" here describes the exposure class, not the
-current publication state. The cases, their references, and their graders are
-open within the repository, and they were authored with AI assistance —
-including by the model family a later study would evaluate. They are therefore
-contaminated for any clean confirmatory measurement of those models.
+Every case here is marked `"exposure": "PUBLIC_PILOT_ONLY"`: it is intentionally
+public methodology material, and none of it is held out. The repository is
+public, so the cases, references, graders, and audit history should be treated as
+fully exposed. They were authored with AI assistance — including by the model
+family a later study would evaluate — and therefore cannot support a clean
+confirmatory claim about those models. No held-out confirmatory set exists in
+this repository.
 
 Use them for methodology development, tooling validation, and worked examples.
 A confirmatory result requires a separately authored, permanently private
