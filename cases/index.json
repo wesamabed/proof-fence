@@ -53,7 +53,8 @@
     "public_safety": "synthetic",
     "limitations": [
       "single-envelope evidence only; no follow-up read is modelled",
-      "binary outcome: the case measures fact sufficiency, not an authority transition"
+      "binary outcome: the case measures fact sufficiency, not an authority transition",
+      "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
     ]
   },
   {
@@ -121,7 +122,8 @@
     "public_safety": "synthetic",
     "limitations": [
       "the inventory scan is modelled as complete; enumeration completeness is exercised separately in PF-011",
-      "binary outcome: this case measures fact sufficiency, not an authority transition"
+      "binary outcome: this case measures fact sufficiency, not an authority transition",
+      "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
     ]
   },
   {
@@ -196,7 +198,7 @@
     "category": "authority-decision",
     "decision_model": "four-valued-authority",
     "exposure": "PUBLIC_PILOT_ONLY",
-    "invariant": "A service's account of what it did does not override an independent reading of what is actually stored; where the two accounts conflict, or where neither is available, no final authority transition is warranted.",
+    "invariant": "A service's account of what it did does not establish what is actually stored; only an independent reading of the store does. Where that reading is unavailable, unattributable or indeterminate, where the request itself is not one this release models, or where the two accounts conflict, no final authority transition is warranted.",
     "starter": "starter",
     "grader": "grader",
     "reference": "reference",

@@ -84,10 +84,16 @@ func TestSubjectComparisonIsLiteral(t *testing.T) {
 		"an observation whose subject differs only by case")
 }
 
-func TestRequestWithoutASubject(t *testing.T) {
+func TestEmptySubjectMatchesLiterally(t *testing.T) {
 	obs := Observation{Present: true, Verified: true, Subject: "", Generation: 7, Compliant: true}
+	want(t, AuthorityDecision(req("", 7), obs), Retain,
+		"a request and an attributable compliant observation naming the same empty subject identifier")
+}
+
+func TestEmptySubjectAgainstANamedSubject(t *testing.T) {
+	obs := Observation{Present: true, Verified: true, Subject: "svc-a", Generation: 7, Compliant: true}
 	want(t, AuthorityDecision(req("", 7), obs), Quarantine,
-		"a request naming no subject")
+		"a request naming the empty subject identifier with an observation of a different subject")
 }
 
 func TestRequestWithoutAGeneration(t *testing.T) {

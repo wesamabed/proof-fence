@@ -57,24 +57,24 @@ func TestDeclinedRemoveContradictedByAbsentKey(t *testing.T) {
 		"a removal the service declined, with the slot nonetheless read back empty")
 }
 
-func TestInstallErrorWithPresentKey(t *testing.T) {
-	want(t, decide(Install, Errored, KeyPresent), Quarantine,
-		"an install whose outcome the service could not report, with a key in the slot")
+func TestInstallUnreportedWithPresentKey(t *testing.T) {
+	want(t, decide(Install, Errored, KeyPresent), Grant,
+		"an install whose outcome the service could not report, with the key read back in the slot")
 }
 
-func TestInstallErrorWithAbsentKey(t *testing.T) {
-	want(t, decide(Install, Errored, KeyAbsent), Quarantine,
-		"an install whose outcome the service could not report, with an empty slot")
+func TestInstallUnreportedWithAbsentKey(t *testing.T) {
+	want(t, decide(Install, Errored, KeyAbsent), Retain,
+		"an install whose outcome the service could not report, with the slot read back still empty")
 }
 
-func TestRemoveErrorWithAbsentKey(t *testing.T) {
-	want(t, decide(Remove, Errored, KeyAbsent), Quarantine,
-		"a removal whose outcome the service could not report, with an empty slot")
+func TestRemoveUnreportedWithAbsentKey(t *testing.T) {
+	want(t, decide(Remove, Errored, KeyAbsent), Revoke,
+		"a removal whose outcome the service could not report, with the slot read back empty")
 }
 
-func TestRemoveErrorWithPresentKey(t *testing.T) {
-	want(t, decide(Remove, Errored, KeyPresent), Quarantine,
-		"a removal whose outcome the service could not report, with a key in the slot")
+func TestRemoveUnreportedWithPresentKey(t *testing.T) {
+	want(t, decide(Remove, Errored, KeyPresent), Retain,
+		"a removal whose outcome the service could not report, with the key read back still in the slot")
 }
 
 func TestInstallWithUnreadableSlot(t *testing.T) {
@@ -120,7 +120,7 @@ func TestNoResponseFromTheService(t *testing.T) {
 		ApplyReport{Returned: false},
 		Readback{Present: true, Verified: true, State: KeyPresent},
 	)
-	want(t, got, Quarantine, "an install for which no response arrived at all")
+	want(t, got, Grant, "an install for which no response arrived, with the key read back in the slot")
 }
 
 func TestNoResponseFromTheServiceOnRemoval(t *testing.T) {
@@ -129,17 +129,17 @@ func TestNoResponseFromTheServiceOnRemoval(t *testing.T) {
 		ApplyReport{Returned: false},
 		Readback{Present: true, Verified: true, State: KeyAbsent},
 	)
-	want(t, got, Quarantine, "a removal for which no response arrived at all")
+	want(t, got, Revoke, "a removal for which no response arrived, with the slot read back empty")
 }
 
 func TestUnmodelledApplyStatus(t *testing.T) {
-	want(t, decide(Install, ApplyStatus("PARTIALLY_APPLIED"), KeyPresent), Quarantine,
-		"a status this client release does not model")
+	want(t, decide(Install, ApplyStatus("PARTIALLY_APPLIED"), KeyPresent), Grant,
+		"a status this client release does not model, with the key read back in the slot")
 }
 
 func TestEmptyApplyStatus(t *testing.T) {
-	want(t, decide(Remove, ApplyStatus(""), KeyAbsent), Quarantine,
-		"a report carrying no status")
+	want(t, decide(Remove, ApplyStatus(""), KeyAbsent), Revoke,
+		"a report carrying no status, with the slot read back empty")
 }
 
 func TestUnmodelledIntent(t *testing.T) {

@@ -89,38 +89,44 @@ func reportedState(intent Intent, report ApplyReport) (SlotState, bool) {
 // RotationDecision decides one slot's trust-store entry from two independent
 // accounts of the same slot.
 //
-// The readback is the only account taken from the storage layer itself, and it
-// speaks only when a record was loaded, is attributable to the reader, and
-// decoded to a definite state. The service's report is its own account of what
-// it did; where it claims a state the readback denies, the two accounts cannot
-// both be right and no final transition is safe. Where neither account is
-// available -- an undecodable slot, an unattributable record, or a service that
-// could not say what happened -- the pass has not established anything to act
-// on. Only when both accounts agree does the slot's actual contents decide:
-// a key that is there after an install may be published, a key that is gone
-// after a removal must be withdrawn, and a slot still in the state it started
-// from means nothing changed.
+// The readback is the only account taken from the storage layer itself. It
+// speaks when a record was loaded, is attributable to the reader, and decoded to
+// a definite state, and what it then says is what the slot now holds. The task's
+// preconditions -- INSTALL is issued only from an empty slot, REMOVE only from
+// an occupied one -- carry that forward to what this pass did: after an install,
+// a key in the slot is the installed key and an empty slot is a slot nothing was
+// written to. An intent this client release does not model carries no such
+// precondition, so for it nothing connects the slot's contents to this pass.
+//
+// The service's report is a second account, not a required one. Where it claims
+// a state the readback denies, the two cannot both be right and no final
+// transition is safe. Where it claims nothing -- an ERROR, a status this release
+// does not model, or no response at all -- it neither adds to nor subtracts from
+// what the readback has already established, and the pass is decided on the
+// readback alone. Requiring the service to corroborate an attributable, definite
+// readback would quarantine passes whose evidence is in fact determinate, which
+// is the mirror of the error this benchmark measures.
 func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if req.Intent != Install && req.Intent != Remove {
+		return Quarantine
+	}
 	if !rb.Present || !rb.Verified {
 		return Quarantine
 	}
 	if rb.State != KeyPresent && rb.State != KeyAbsent {
 		return Quarantine
 	}
-	claimed, claims := reportedState(req.Intent, report)
-	if !claims || claimed != rb.State {
+	if claimed, claims := reportedState(req.Intent, report); claims && claimed != rb.State {
 		return Quarantine
 	}
-	switch req.Intent {
-	case Install:
+	if req.Intent == Install {
 		if rb.State == KeyPresent {
 			return Grant
 		}
 		return Retain
-	default:
-		if rb.State == KeyAbsent {
-			return Revoke
-		}
-		return Retain
 	}
+	if rb.State == KeyAbsent {
+		return Revoke
+	}
+	return Retain
 }
