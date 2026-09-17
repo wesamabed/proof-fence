@@ -1,0 +1,72 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type Intent string
+
+const (
+	Install Intent = "INSTALL"
+	Remove  Intent = "REMOVE"
+)
+
+type ApplyStatus string
+
+const (
+	Applied  ApplyStatus = "APPLIED"
+	Rejected ApplyStatus = "REJECTED"
+	Errored  ApplyStatus = "ERROR"
+)
+
+type SlotState string
+
+const (
+	KeyPresent SlotState = "KEY_PRESENT"
+	KeyAbsent  SlotState = "KEY_ABSENT"
+	Unreadable SlotState = "UNREADABLE"
+)
+
+type Request struct {
+	Intent Intent
+}
+
+type ApplyReport struct {
+	Returned bool
+	Status   ApplyStatus
+}
+
+type Readback struct {
+	Present  bool
+	Verified bool
+	State    SlotState
+}
+
+// Decides from the stored state alone and never consults the report.
+func RotationDecision(req Request, report ApplyReport, rb Readback) Decision {
+	if !rb.Present || !rb.Verified {
+		return Quarantine
+	}
+	switch req.Intent {
+	case Install:
+		if rb.State == KeyPresent {
+			return Grant
+		}
+		if rb.State == KeyAbsent {
+			return Retain
+		}
+	case Remove:
+		if rb.State == KeyAbsent {
+			return Revoke
+		}
+		if rb.State == KeyPresent {
+			return Retain
+		}
+	}
+	return Quarantine
+}

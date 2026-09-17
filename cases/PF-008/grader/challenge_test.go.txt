@@ -1,0 +1,110 @@
+package challenge
+
+import "testing"
+
+func coherent() RetirementEvidence {
+	return RetirementEvidence{
+		Result:            Succeeded,
+		FaultCode:         "",
+		PayloadRetired:    true,
+		InventoryRecorded: true,
+		InventoryVerified: true,
+		InventoryCount:    0,
+	}
+}
+
+func TestCoherentRetirement(t *testing.T) {
+	if !RetirementConfirmed(coherent()) {
+		t.Fatal("coherent retirement evidence was rejected")
+	}
+}
+
+func TestDeniedInvocation(t *testing.T) {
+	e := coherent()
+	e.Result = Denied
+	e.FaultCode = "AccessDenied"
+	if RetirementConfirmed(e) {
+		t.Fatal("a denied registry invocation was confirmed")
+	}
+}
+
+func TestFailedInvocation(t *testing.T) {
+	e := coherent()
+	e.Result = Failed
+	if RetirementConfirmed(e) {
+		t.Fatal("a failed registry invocation was confirmed")
+	}
+}
+
+func TestUnmodelledResult(t *testing.T) {
+	e := coherent()
+	e.Result = Result("PARTIALLY_SUCCEEDED")
+	if RetirementConfirmed(e) {
+		t.Fatal("a classification this client does not model was confirmed")
+	}
+}
+
+func TestRecordedFaultAlongsideSuccess(t *testing.T) {
+	e := coherent()
+	e.FaultCode = "InternalFailure"
+	if RetirementConfirmed(e) {
+		t.Fatal("an envelope carrying a recorded fault was confirmed")
+	}
+}
+
+func TestPayloadDoesNotReportRetirement(t *testing.T) {
+	e := coherent()
+	e.PayloadRetired = false
+	if RetirementConfirmed(e) {
+		t.Fatal("an envelope whose payload does not report retirement was confirmed")
+	}
+}
+
+func TestNoScanRecord(t *testing.T) {
+	e := coherent()
+	e.InventoryRecorded = false
+	if RetirementConfirmed(e) {
+		t.Fatal("retirement was confirmed with no inventory scan record")
+	}
+}
+
+func TestUnattributableScanRecord(t *testing.T) {
+	e := coherent()
+	e.InventoryVerified = false
+	if RetirementConfirmed(e) {
+		t.Fatal("an unattributable inventory scan record confirmed retirement")
+	}
+}
+
+func TestOneLiveReference(t *testing.T) {
+	e := coherent()
+	e.InventoryCount = 1
+	if RetirementConfirmed(e) {
+		t.Fatal("retirement was confirmed with a live reference counted")
+	}
+}
+
+func TestManyLiveReferences(t *testing.T) {
+	e := coherent()
+	e.InventoryCount = 37
+	if RetirementConfirmed(e) {
+		t.Fatal("retirement was confirmed with many live references counted")
+	}
+}
+
+func TestRegistrySuccessWithNoScanAtAll(t *testing.T) {
+	e := coherent()
+	e.InventoryRecorded = false
+	e.InventoryVerified = false
+	if RetirementConfirmed(e) {
+		t.Fatal("a zero count from a scan that never ran confirmed retirement")
+	}
+}
+
+func TestScanCleanButRegistryDenied(t *testing.T) {
+	e := coherent()
+	e.Result = Denied
+	if RetirementConfirmed(e) {
+		t.Fatal("a clean inventory scan confirmed retirement despite a denied registry invocation")
+	}
+}

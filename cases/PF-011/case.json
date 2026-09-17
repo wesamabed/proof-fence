@@ -1,0 +1,18 @@
+{
+  "id": "PF-011",
+  "title": "Decide cleanup authority under an incomplete enumeration",
+  "category": "authority-decision",
+  "decision_model": "four-valued-authority",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "One bounded page of a paginated enumeration establishes what it names, not what the rest of the enumeration would name; an irreversible authority transition requires evidence that the enumeration is complete.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "mutants": "mutants",
+  "public_safety": "synthetic",
+  "limitations": [
+    "GRANT is not reachable in this case: every workspace already holds a cleanup role",
+    "pagination is modelled as a single page plus a cursor, not as a full enumeration loop",
+    "listing consistency and concurrent writers are out of scope"
+  ]
+}

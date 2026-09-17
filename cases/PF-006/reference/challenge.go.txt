@@ -1,0 +1,22 @@
+package challenge
+
+type Attestation struct {
+	SignatureValid bool
+	Scope          string
+	SubjectDigest  string
+}
+
+// AttestationSatisfies reports whether this attestation is the evidence the
+// gate's policy demands.
+//
+// A valid signature establishes only that the attestation service said
+// something, not that it said anything about this gate's scope or about any
+// artifact: the fetcher delivers attestations the client did not ask for, and an
+// unbound statement names no subject at all. A gate whose policy names no scope
+// has no requirement that any attestation could meet, so it cannot be satisfied.
+func AttestationSatisfies(requiredScope string, a Attestation) bool {
+	return requiredScope != "" &&
+		a.SignatureValid &&
+		a.Scope == requiredScope &&
+		a.SubjectDigest != ""
+}

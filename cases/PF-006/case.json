@@ -1,0 +1,17 @@
+{
+  "id": "PF-006",
+  "title": "Require an attestation issued for the scope actually being gated",
+  "category": "provenance",
+  "decision_model": "boolean-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A verifiable signature establishes that a statement was issued, not that it was issued about the scope and subject the caller needs; validity is not relevance.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "mutants": "mutants",
+  "public_safety": "synthetic",
+  "limitations": [
+    "signature verification is modelled as a supplied boolean, not performed",
+    "scope matching is literal string equality; real scope algebras may be hierarchical"
+  ]
+}

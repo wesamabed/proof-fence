@@ -1,0 +1,37 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type ChangeRequest struct {
+	Subject    string
+	Generation int
+}
+
+type Observation struct {
+	Present    bool
+	Verified   bool
+	Subject    string
+	Generation int
+	Compliant  bool
+}
+
+// Anchors correctly but never checks that the checker signed the record.
+func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
+	if req.Subject == "" || req.Generation < 1 {
+		return Quarantine
+	}
+	if !obs.Present || obs.Subject != req.Subject || obs.Generation != req.Generation {
+		return Quarantine
+	}
+	if obs.Compliant {
+		return Retain
+	}
+	return Revoke
+}

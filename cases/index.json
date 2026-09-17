@@ -1,0 +1,213 @@
+[
+  {
+    "id": "PF-001",
+    "title": "Reject duplicate JSON members",
+    "category": "admission",
+    "decision_model": "parse-result",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "An exact duplicate member in a security-bearing JSON object must be rejected rather than resolved by last-write-wins parsing.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-002",
+    "title": "Require exact JSON member spelling",
+    "category": "admission",
+    "decision_model": "parse-result",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "Case-folded aliases must not satisfy an exact security vocabulary or coexist as a decoy beside the exact member.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-003",
+    "title": "Reject trailing JSON documents",
+    "category": "admission",
+    "decision_model": "parse-result",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A parser must consume exactly one complete security-bearing JSON value plus optional whitespace.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-004",
+    "title": "Confirm removal only from a coherent response envelope",
+    "category": "coherence",
+    "decision_model": "boolean-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A serializer-rendered payload must not establish a removal that the invocation classification or the independently recorded fault state contradicts, and an unmodelled classification establishes nothing.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "single-envelope evidence only; no follow-up read is modelled",
+      "binary outcome: the case measures fact sufficiency, not an authority transition",
+      "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
+    ]
+  },
+  {
+    "id": "PF-005",
+    "title": "Withhold a finding when no attributable analysis exists",
+    "category": "closure",
+    "decision_model": "three-valued-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A field read out of a record that does not exist, or that is not attributable to its stated producer, yields an undetermined finding rather than either a positive or a negative conclusion.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "signature verification is modelled as a supplied boolean, not performed",
+      "three-valued fact output; this case is an input to an authority decision, not the decision itself"
+    ]
+  },
+  {
+    "id": "PF-006",
+    "title": "Require an attestation issued for the scope actually being gated",
+    "category": "provenance",
+    "decision_model": "boolean-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A verifiable signature establishes that a statement was issued, not that it was issued about the scope and subject the caller needs; validity is not relevance.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "signature verification is modelled as a supplied boolean, not performed",
+      "scope matching is literal string equality; real scope algebras may be hierarchical"
+    ]
+  },
+  {
+    "id": "PF-007",
+    "title": "Establish containment only from an attributable measurement",
+    "category": "provenance",
+    "decision_model": "boolean-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A field the requesting party controls cannot establish a measured property of the boundary it sits behind, nor rebut an attributable measurement of it.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "signature verification is modelled as a supplied boolean, not performed",
+      "probe freshness is out of scope for this case; see PF-012 for evidence anchoring"
+    ]
+  },
+  {
+    "id": "PF-008",
+    "title": "Confirm an irreversible retirement only from two coherent subsystems",
+    "category": "coherence",
+    "decision_model": "boolean-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "An irreversible step requires each independent subsystem to have positively reported what the step assumes; a zero-valued field from a subsystem that produced no record is not a measurement of zero.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "the inventory scan is modelled as complete; enumeration completeness is exercised separately in PF-011",
+      "binary outcome: this case measures fact sufficiency, not an authority transition",
+      "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
+    ]
+  },
+  {
+    "id": "PF-009",
+    "title": "Fail when a required security test disappears",
+    "category": "execution-proof",
+    "decision_model": "validation-result",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A previously required security test must not silently disappear from the discovered test universe.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "public_safety": "synthetic",
+    "limitations": []
+  },
+  {
+    "id": "PF-010",
+    "title": "Establish execution only from independently observed events",
+    "category": "execution-proof",
+    "decision_model": "boolean-fact",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A report a process writes about itself cannot establish that the process did what it reports; only an independent observer's record of the events can, and it must cover every required name.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "the supervisor's event stream is modelled as trustworthy input; stream integrity itself is out of scope",
+      "binary outcome: this case measures fact sufficiency, not an authority transition"
+    ]
+  },
+  {
+    "id": "PF-011",
+    "title": "Decide cleanup authority under an incomplete enumeration",
+    "category": "authority-decision",
+    "decision_model": "four-valued-authority",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "One bounded page of a paginated enumeration establishes what it names, not what the rest of the enumeration would name; an irreversible authority transition requires evidence that the enumeration is complete.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "GRANT is not reachable in this case: every workspace already holds a cleanup role",
+      "pagination is modelled as a single page plus a cursor, not as a full enumeration loop",
+      "listing consistency and concurrent writers are out of scope"
+    ]
+  },
+  {
+    "id": "PF-012",
+    "title": "Decide a grant when the only attestation is anchored elsewhere",
+    "category": "authority-decision",
+    "decision_model": "four-valued-authority",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "Cryptographic attributability establishes who produced an observation, not what the observation is about; an observation anchored to another subject or another generation supports neither a positive nor a negative authority transition for this one.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "GRANT is not reachable in this case: every subject already holds a grant",
+      "signature verification is modelled as a supplied boolean, not performed",
+      "generation ordering is modelled as integer equality; real anchoring may use digests or epochs"
+    ]
+  },
+  {
+    "id": "PF-013",
+    "title": "Decide a trust-store entry when two modalities disagree",
+    "category": "authority-decision",
+    "decision_model": "four-valued-authority",
+    "exposure": "PUBLIC_PILOT_ONLY",
+    "invariant": "A service's account of what it did does not establish what is actually stored; only an independent reading of the store does. Where that reading is unavailable, unattributable or indeterminate, where the request itself is not one this release models, or where the two accounts conflict, no final authority transition is warranted.",
+    "starter": "starter",
+    "grader": "grader",
+    "reference": "reference",
+    "mutants": "mutants",
+    "public_safety": "synthetic",
+    "limitations": [
+      "signature verification is modelled as a supplied boolean, not performed",
+      "the readback is modelled as contemporaneous with the request; read-after-write timing is out of scope",
+      "a single readback is modelled, not quorum or repeated reads"
+    ]
+  }
+]

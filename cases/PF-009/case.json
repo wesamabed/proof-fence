@@ -1,0 +1,13 @@
+{
+  "id": "PF-009",
+  "title": "Fail when a required security test disappears",
+  "category": "execution-proof",
+  "decision_model": "validation-result",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A previously required security test must not silently disappear from the discovered test universe.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "public_safety": "synthetic",
+  "limitations": []
+}

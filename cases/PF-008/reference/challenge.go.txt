@@ -1,0 +1,40 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+// RetirementConfirmed gates an irreversible purge, so it reports true only when
+// both subsystems have actually said what the purge assumes.
+//
+// From the registry side: only the classification reports what the invocation
+// did, an unmodelled classification reports nothing this client understands, a
+// fault recorded independently of the classification leaves the envelope
+// inconsistent, and the serializer-rendered payload corroborates rather than
+// carries the claim.
+//
+// From the inventory side: a count of zero means "the scanner looked and found
+// nothing" only when a scan record exists and is attributable to the scanner.
+// Otherwise the zero is Go's zero value for a field nobody wrote, which is
+// indistinguishable from a scan that never ran.
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.Result == Succeeded &&
+		e.FaultCode == "" &&
+		e.PayloadRetired &&
+		e.InventoryRecorded &&
+		e.InventoryVerified &&
+		e.InventoryCount == 0
+}

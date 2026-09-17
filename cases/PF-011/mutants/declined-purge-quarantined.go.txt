@@ -1,0 +1,50 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type PurgeStatus string
+
+const (
+	Completed PurgeStatus = "COMPLETED"
+	Rejected  PurgeStatus = "REJECTED"
+	Failed    PurgeStatus = "FAILED"
+)
+
+type PurgeReport struct {
+	Status PurgeStatus
+}
+
+type ResiduePage struct {
+	Retrieved  bool
+	Items      []string
+	NextCursor string
+}
+
+type CleanupEvidence struct {
+	Purge PurgeReport
+	Page  ResiduePage
+}
+
+// Quarantines a determinate negative report instead of re-queueing it.
+func CleanupDecision(e CleanupEvidence) Decision {
+	if e.Purge.Status != Completed {
+		return Quarantine
+	}
+	if !e.Page.Retrieved {
+		return Quarantine
+	}
+	if len(e.Page.Items) > 0 {
+		return Retain
+	}
+	if e.Page.NextCursor != "" {
+		return Quarantine
+	}
+	return Revoke
+}

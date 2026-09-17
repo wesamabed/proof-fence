@@ -1,0 +1,27 @@
+package challenge
+
+type Decision string
+
+const (
+	Grant      Decision = "GRANT"
+	Retain     Decision = "RETAIN"
+	Revoke     Decision = "REVOKE"
+	Quarantine Decision = "QUARANTINE"
+)
+
+type ChangeRequest struct {
+	Subject    string
+	Generation int
+}
+
+type Observation struct {
+	Present    bool
+	Verified   bool
+	Subject    string
+	Generation int
+	Compliant  bool
+}
+
+func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
+	return Grant
+}

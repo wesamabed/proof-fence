@@ -1,0 +1,59 @@
+package challenge
+
+import "testing"
+
+func TestAttributableNoPath(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: true, SignatureValid: true, ReportedNoPath: true})
+	if !f.Determined || !f.Value {
+		t.Fatalf("an attributable no-path conclusion was not reported as such: %#v", f)
+	}
+}
+
+func TestAttributablePathExists(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: true, SignatureValid: true, ReportedNoPath: false})
+	if !f.Determined || f.Value {
+		t.Fatalf("an attributable path-exists conclusion was not reported as such: %#v", f)
+	}
+}
+
+func TestNoRecord(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: false, SignatureValid: false, ReportedNoPath: true})
+	if f.Determined {
+		t.Fatalf("a subject with no run record was reported as determined: %#v", f)
+	}
+}
+
+func TestNoRecordWithSignatureBitSet(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: false, SignatureValid: true, ReportedNoPath: true})
+	if f.Determined {
+		t.Fatalf("a missing run record with a signature bit set was reported as determined: %#v", f)
+	}
+}
+
+func TestNoRecordNegativeField(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: false, SignatureValid: true, ReportedNoPath: false})
+	if f.Determined {
+		t.Fatalf("a missing run record was reported as a determined exposure: %#v", f)
+	}
+}
+
+func TestUnattributableRecord(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: true, SignatureValid: false, ReportedNoPath: true})
+	if f.Determined {
+		t.Fatalf("an unattributable record was reported as determined: %#v", f)
+	}
+}
+
+func TestUnattributableNegativeRecord(t *testing.T) {
+	f := PathFinding(PathAnalysis{Recorded: true, SignatureValid: false, ReportedNoPath: false})
+	if f.Determined {
+		t.Fatalf("an unattributable record was escalated as a determined exposure: %#v", f)
+	}
+}
+
+func TestEmptyInput(t *testing.T) {
+	f := PathFinding(PathAnalysis{})
+	if f.Determined {
+		t.Fatalf("an empty analysis was reported as determined: %#v", f)
+	}
+}

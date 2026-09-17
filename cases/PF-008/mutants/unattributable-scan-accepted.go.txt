@@ -1,0 +1,24 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+// Requires a scan record but not that it is attributable to the scanner.
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.Result == Succeeded && e.FaultCode == "" && e.PayloadRetired &&
+		e.InventoryRecorded && e.InventoryCount == 0
+}

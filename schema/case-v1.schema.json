@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProofFence case v1",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "category",
+    "decision_model",
+    "exposure",
+    "invariant",
+    "starter",
+    "grader",
+    "reference",
+    "public_safety"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PF-[0-9]{3}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "admission",
+        "provenance",
+        "coherence",
+        "closure",
+        "execution-proof",
+        "authority-decision"
+      ]
+    },
+    "decision_model": {
+      "description": "The shape of the value the candidate function returns. Cases in the authority-decision family use the four-valued model documented in docs/AUTHORITY_DECISION_MODEL.md; the others return a parse result, a validation error, a boolean fact, or a three-valued fact that feeds such a decision.",
+      "type": "string",
+      "enum": [
+        "parse-result",
+        "validation-result",
+        "boolean-fact",
+        "three-valued-fact",
+        "four-valued-authority"
+      ]
+    },
+    "exposure": {
+      "description": "Contamination status. PUBLIC_PILOT_ONLY means the case, its reference, and its graders are public and have been read by the authoring models, so the case cannot serve as a clean confirmatory measurement.",
+      "const": "PUBLIC_PILOT_ONLY"
+    },
+    "invariant": {
+      "type": "string",
+      "minLength": 1
+    },
+    "starter": {
+      "type": "string"
+    },
+    "grader": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "mutants": {
+      "description": "Directory of committed near-miss and degenerate-strategy implementations. Every committed mutant must be killed by the case grader.",
+      "type": "string"
+    },
+    "public_safety": {
+      "const": "synthetic"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

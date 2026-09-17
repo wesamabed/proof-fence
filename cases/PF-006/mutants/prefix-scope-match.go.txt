@@ -1,0 +1,13 @@
+package challenge
+
+type Attestation struct {
+	SignatureValid bool
+	Scope          string
+	SubjectDigest  string
+}
+
+// Compares scopes by prefix instead of literally.
+func AttestationSatisfies(requiredScope string, a Attestation) bool {
+	return requiredScope != "" && a.SignatureValid && a.SubjectDigest != "" &&
+		len(a.Scope) >= len(requiredScope) && a.Scope[:len(requiredScope)] == requiredScope
+}

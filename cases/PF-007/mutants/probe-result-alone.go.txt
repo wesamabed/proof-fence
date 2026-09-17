@@ -1,0 +1,13 @@
+package challenge
+
+type ContainmentInputs struct {
+	RequestField  bool
+	ProbeRecorded bool
+	ProbeVerified bool
+	ProbeResult   bool
+}
+
+// Reads the measured value straight out of an unchecked record.
+func ContainmentEstablished(in ContainmentInputs) bool {
+	return in.ProbeResult
+}

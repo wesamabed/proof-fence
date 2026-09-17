@@ -1,0 +1,18 @@
+{
+  "id": "PF-004",
+  "title": "Confirm removal only from a coherent response envelope",
+  "category": "coherence",
+  "decision_model": "boolean-fact",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A serializer-rendered payload must not establish a removal that the invocation classification or the independently recorded fault state contradicts, and an unmodelled classification establishes nothing.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "mutants": "mutants",
+  "public_safety": "synthetic",
+  "limitations": [
+    "single-envelope evidence only; no follow-up read is modelled",
+    "binary outcome: the case measures fact sufficiency, not an authority transition",
+    "the defeating force of a recorded fault alongside a SUCCEEDED classification is inferred from the fault recorder's stated independence plus the task's 'establishes that the record is gone' standard, not stated outright; two independent v0.3 auditors rated it clean at MEDIUM confidence"
+  ]
+}

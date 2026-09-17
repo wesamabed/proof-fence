@@ -1,0 +1,22 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RetirementEvidence struct {
+	Result            Result
+	FaultCode         string
+	PayloadRetired    bool
+	InventoryRecorded bool
+	InventoryVerified bool
+	InventoryCount    int
+}
+
+func RetirementConfirmed(e RetirementEvidence) bool {
+	return e.PayloadRetired && e.InventoryCount == 0
+}

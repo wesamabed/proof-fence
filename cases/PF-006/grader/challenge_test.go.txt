@@ -1,0 +1,63 @@
+package challenge
+
+import "testing"
+
+func TestExactScopeAndBoundSubject(t *testing.T) {
+	if !AttestationSatisfies("release/prod", Attestation{true, "release/prod", "sha256:abc"}) {
+		t.Fatal("a valid attestation for the required scope and a bound subject was rejected")
+	}
+}
+
+func TestDifferentScope(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{true, "release/staging", "sha256:abc"}) {
+		t.Fatal("an attestation issued for another scope was accepted")
+	}
+}
+
+func TestScopeIsAPrefixOfRequired(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{true, "release", "sha256:abc"}) {
+		t.Fatal("an attestation whose scope is a prefix of the required scope was accepted")
+	}
+}
+
+func TestRequiredIsAPrefixOfScope(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{true, "release/prod-canary", "sha256:abc"}) {
+		t.Fatal("an attestation whose scope merely starts with the required scope was accepted")
+	}
+}
+
+func TestScopeCaseDiffers(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{true, "Release/Prod", "sha256:abc"}) {
+		t.Fatal("a case-folded scope was accepted against a literal comparison")
+	}
+}
+
+func TestInvalidSignature(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{false, "release/prod", "sha256:abc"}) {
+		t.Fatal("an attestation whose signature did not verify was accepted")
+	}
+}
+
+func TestUnboundSubject(t *testing.T) {
+	if AttestationSatisfies("release/prod", Attestation{true, "release/prod", ""}) {
+		t.Fatal("an attestation bound to no artifact was accepted")
+	}
+}
+
+func TestUnconfiguredGate(t *testing.T) {
+	if AttestationSatisfies("", Attestation{true, "", "sha256:abc"}) {
+		t.Fatal("a gate whose policy names no scope was satisfied by a scopeless attestation")
+	}
+}
+
+func TestUnconfiguredGateWithScopedAttestation(t *testing.T) {
+	if AttestationSatisfies("", Attestation{true, "release/prod", "sha256:abc"}) {
+		t.Fatal("a gate whose policy names no scope was satisfied")
+	}
+}
+
+func TestAnotherExactScope(t *testing.T) {
+	if !AttestationSatisfies("release/eu-west", Attestation{true, "release/eu-west", "sha256:def"}) {
+		t.Fatal("a valid attestation for a second required scope was rejected")
+	}
+}

@@ -1,0 +1,18 @@
+{
+  "id": "PF-013",
+  "title": "Decide a trust-store entry when two modalities disagree",
+  "category": "authority-decision",
+  "decision_model": "four-valued-authority",
+  "exposure": "PUBLIC_PILOT_ONLY",
+  "invariant": "A service's account of what it did does not establish what is actually stored; only an independent reading of the store does. Where that reading is unavailable, unattributable or indeterminate, where the request itself is not one this release models, or where the two accounts conflict, no final authority transition is warranted.",
+  "starter": "starter",
+  "grader": "grader",
+  "reference": "reference",
+  "mutants": "mutants",
+  "public_safety": "synthetic",
+  "limitations": [
+    "signature verification is modelled as a supplied boolean, not performed",
+    "the readback is modelled as contemporaneous with the request; read-after-write timing is out of scope",
+    "a single readback is modelled, not quorum or repeated reads"
+  ]
+}

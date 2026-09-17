@@ -1,0 +1,29 @@
+package challenge
+
+type Result string
+
+const (
+	Succeeded Result = "SUCCEEDED"
+	Denied    Result = "DENIED"
+	Failed    Result = "FAILED"
+)
+
+type RemovalResponse struct {
+	Result         Result
+	FaultCode      string
+	PayloadRemoved bool
+}
+
+// RemovalConfirmed reports whether one response envelope establishes that the
+// record is gone.
+//
+// The router's classification is the only part of the envelope that reports what
+// the invocation did, so nothing weaker can stand in for it, and a classification
+// this client release does not model establishes nothing. A recorded fault is
+// written independently of the classification, so a fault alongside SUCCEEDED
+// leaves the envelope internally inconsistent. The payload is rendered from the
+// accepted request rather than re-read from storage, so it corroborates the
+// classification but cannot carry it alone.
+func RemovalConfirmed(r RemovalResponse) bool {
+	return r.Result == Succeeded && r.FaultCode == "" && r.PayloadRemoved
+}

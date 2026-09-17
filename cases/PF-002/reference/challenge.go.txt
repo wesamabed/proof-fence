@@ -1,0 +1,7 @@
+package challenge
+import("bytes";"encoding/json";"errors";"fmt";"io")
+type Binding struct { RunID string `json:"run_id"`; Authorized bool `json:"authorized"` }
+func ParseBinding(data []byte)(Binding,error){
+ d:=json.NewDecoder(bytes.NewReader(data)); t,e:=d.Token(); if e!=nil||t!=json.Delim('{'){return Binding{},errors.New("object required")}; seen:=map[string]bool{}; var b Binding
+ for d.More(){k,_:=d.Token(); s:=k.(string); if seen[s]{return Binding{},fmt.Errorf("duplicate %q",s)}; seen[s]=true; switch s{case"run_id":e=d.Decode(&b.RunID);case"authorized":e=d.Decode(&b.Authorized);default:return Binding{},fmt.Errorf("unknown %q",s)}; if e!=nil{return Binding{},e}}
+ if _,e=d.Token();e!=nil{return Binding{},e}; if _,e=d.Token();e!=io.EOF{return Binding{},errors.New("trailing JSON")}; if !seen["run_id"]||!seen["authorized"]||b.RunID==""{return Binding{},errors.New("missing required")}; return b,nil }
