@@ -12,9 +12,22 @@ authority transition rather than an input to one.
 | `REVOKE` | The available evidence sufficiently establishes that authority should be removed. |
 | `QUARANTINE` | The available evidence does not support a safe final authority transition, or material evidence conflicts. Contain or withhold pending resolution. |
 
-These definitions are public. They appear verbatim in each authority-decision
-case's starter code, and a case's task statement describes what its platform
-*does* on each decision.
+These definitions reach the candidate. They appear verbatim in each
+authority-decision case's starter code, **and since v0.3 the substance of the
+next section is appended to every four-valued case's materialized `TASK.md`** by
+`bench.ComposeTask`, so a solver receives the RETAIN-versus-QUARANTINE
+distinction without having to read this file. A case's task statement additionally
+describes what its platform *does* on each decision.
+
+That is a v0.3 repair. In v0.2 the vocabulary reached a solver **only** through
+four const doc comments: `Materialize` copied `starter/` and `task.md` and
+nothing else, no `task.md` referenced any document under `docs/`, and `case.json`
+— whose `invariant` field often states a case's rule outright — was never
+materialized. The decisive gloss below therefore never arrived, while each task
+described `RETAIN` by a non-committal operational effect such as "re-queue for
+another pass", which pulls the opposite way. An independent blind audit of v0.2
+recorded this as the suite's most widespread defect.
+`TestMaterializedTaskCarriesTheDecisionVocabulary` now fails if it regresses.
 
 What a task statement never says is which evidence combination maps to which
 decision. That mapping is the thing being measured, and it is derivable from the
@@ -50,6 +63,12 @@ decision that case's semantics can reach, and every such case commits an
 `always-quarantine` mutant that the grader must kill. The same is true of
 `always-grant`, `always-retain`, and `always-revoke`. `go run ./cmd/proof-fence
 mutation` re-checks all of them.
+
+Killing `always-quarantine` is a weak property on its own: it only requires that
+*some* fixture be determinate. What makes the anti-degeneracy claim meaningful is
+the **distribution** of determinate fixtures, which is published in
+`docs/CONSTRUCT_VALIDITY.md` and derived from the graders by
+`proof-fence distribution` rather than typed by hand.
 
 Scoring is all-or-nothing per case: a submission passes a case only when every
 trusted test for it passes. There is no partial credit for a degenerate strategy.

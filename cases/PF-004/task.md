@@ -16,8 +16,11 @@ the transport:
   recorder writes this field from its own log, independently of how the router
   classified `Result`.
 - `PayloadRemoved` — a field of the JSON response body. The body is rendered by
-  the response serializer from the request the service accepted. It is not
-  re-read from the storage layer before the response is sent.
+  the response serializer from the request the service accepted. The serializer
+  sets this field from that accepted removal, so a removal the service accepted
+  renders it `true`. It is not re-read from the storage layer before the
+  response is sent, so it reports what the service accepted rather than what the
+  storage layer now holds.
 
 The client issues one call and gets one envelope. There is no follow-up read.
 

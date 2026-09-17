@@ -4,7 +4,7 @@
   "category": "authority-decision",
   "decision_model": "four-valued-authority",
   "exposure": "PUBLIC_PILOT_ONLY",
-  "invariant": "A service's account of what it did does not override an independent reading of what is actually stored; where the two accounts conflict, or where neither is available, no final authority transition is warranted.",
+  "invariant": "A service's account of what it did does not establish what is actually stored; only an independent reading of the store does. Where that reading is unavailable, unattributable or indeterminate, where the request itself is not one this release models, or where the two accounts conflict, no final authority transition is warranted.",
   "starter": "starter",
   "grader": "grader",
   "reference": "reference",

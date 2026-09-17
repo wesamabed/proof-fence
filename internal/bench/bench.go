@@ -208,6 +208,57 @@ hidden grader requirements.
 
 `
 
+// decisionVocabulary is the generic meaning of a case family's outputs.
+//
+// It exists because a rule a grader enforces must be reachable by a solver. In
+// v0.2 the four-valued vocabulary reached a candidate only through four const
+// doc comments in the starter: Materialize copies starter/ and task.md, and
+// nothing else. The decisive distinction between RETAIN (an affirmative
+// conclusion) and QUARANTINE (the absence of one) lived in
+// docs/AUTHORITY_DECISION_MODEL.md, which is never materialized, while each
+// task described RETAIN by a non-committal operational effect such as
+// "re-queue for another pass". A blind oracle audit of v0.2 found that gap and
+// recorded it as the suite's most widespread defect.
+//
+// The text below is about the vocabulary, not about any case's evidence. It
+// states what the outputs mean; it does not state which evidence state yields
+// which output, which is the thing being measured.
+var decisionVocabulary = map[string]string{
+	"four-valued-authority": `
+## The authority decision vocabulary
+
+This section is identical in every ProofFence authority-decision case. It defines
+what the four outputs mean. It says nothing about this case's evidence, and it
+maps no evidence state to any decision.
+
+Three of the four decisions are conclusions. ` + "`QUARANTINE`" + ` is the absence of one.
+
+- ` + "`GRANT`" + ` is a conclusion: the evidence establishes that new authority may
+  safely be issued.
+- ` + "`RETAIN`" + ` is a conclusion: the evidence establishes that existing authority
+  should remain unchanged.
+- ` + "`REVOKE`" + ` is a conclusion: the evidence establishes that authority should be
+  removed.
+- ` + "`QUARANTINE`" + ` says the evidence establishes none of the three, or that material
+  evidence conflicts. Contain or withhold pending resolution.
+
+` + "`RETAIN`" + ` is therefore an affirmative finding about the evidence. It is not a
+default, not a deferral, and not "nothing to do this pass". A platform may act on
+` + "`RETAIN`" + ` by scheduling further work, and this case's section above says what its
+platform does; that operational consequence is not what the decision asserts.
+
+` + "`QUARANTINE`" + ` is not "the safe answer" and it is not "no". Answering ` + "`QUARANTINE`" + `
+when the evidence is in fact determinate is an error in its own right: every
+` + "`QUARANTINE`" + ` suspends something and opens a ticket for a human. Stopping short of a
+conclusion the evidence supports is scored as a failure, exactly as reaching a
+conclusion the evidence does not support is.
+
+Each decision is a statement about what *this pass's evidence* establishes, not
+about what is true of the world. Two passes can face the same underlying reality
+and owe different decisions when they hold different evidence about it.
+`,
+}
+
 func Materialize(root, id, dest string) error {
 	c, dir, err := findCase(root, id)
 	if err != nil {
@@ -225,7 +276,24 @@ func Materialize(root, id, dest string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dest, "TASK.md"), append([]byte(submissionBoundary), task...), 0o644)
+	return os.WriteFile(filepath.Join(dest, "TASK.md"), []byte(ComposeTask(c, string(task))), 0o644)
+}
+
+// ComposeTask builds the exact TASK.md a candidate receives: the submission
+// boundary, the case's own task statement, and the generic vocabulary for the
+// case's decision model. Grading never reads it, so it is exported for tests
+// and tooling that need to check what actually reaches a solver.
+func ComposeTask(c Case, task string) string {
+	var b strings.Builder
+	b.WriteString(submissionBoundary)
+	b.WriteString(task)
+	if v := decisionVocabulary[c.DecisionModel]; v != "" {
+		if !strings.HasSuffix(task, "\n") {
+			b.WriteString("\n")
+		}
+		b.WriteString(v)
+	}
+	return b.String()
 }
 
 func trustedTestNames(graderDir string) ([]string, error) {
@@ -802,9 +870,82 @@ func GradeMutant(root string, c Case, name string) (MutantResult, error) {
 	}, nil
 }
 
+// Mutant kinds. A mutant's kind is a recorded semantic judgment, never a
+// computed property: deciding whether an implementation is a defensible reading
+// of a task means reading the task and the grader and judging what the text
+// entails, which no classifier in this repository attempts.
+const (
+	// MutantDegenerate returns one constant answer regardless of input.
+	MutantDegenerate = "degenerate-strategy"
+	// MutantMutation is a perturbation that is wrong under the published semantics.
+	MutantMutation = "mutation"
+	// MutantAlternativeReading is a reading a competent reader could defend from
+	// the published text at this version. Killing one is not evidence of grader
+	// quality; see MutationSuite.
+	MutantAlternativeReading = "alternative-reading-probe"
+)
+
+// MutantNote is one recorded classification entry.
+type MutantNote struct {
+	Kind    string       `json:"kind"`
+	Note    string       `json:"note,omitempty"`
+	History []MutantNote `json:"history,omitempty"`
+	Version string       `json:"version,omitempty"`
+	Source  string       `json:"source,omitempty"`
+}
+
+// MutantClassification is a case's committed mutant classification file.
+type MutantClassification struct {
+	SchemaVersion string                `json:"schema_version"`
+	CaseID        string                `json:"case_id"`
+	Adjudicated   bool                  `json:"classification_is_adjudicated"`
+	Note          string                `json:"note"`
+	Kinds         map[string]string     `json:"kinds"`
+	Mutants       map[string]MutantNote `json:"mutants"`
+}
+
+// LoadMutantClassification reads a case's mutants/classification.json.
+func LoadMutantClassification(root string, c Case) (MutantClassification, error) {
+	var mc MutantClassification
+	if c.Mutants == "" {
+		return mc, nil
+	}
+	p := filepath.Join(root, "cases", c.ID, c.Mutants, "classification.json")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return mc, nil
+		}
+		return mc, err
+	}
+	if err := json.Unmarshal(b, &mc); err != nil {
+		return mc, fmt.Errorf("%s: %w", p, err)
+	}
+	return mc, nil
+}
+
+// mutationCaveat is printed with every mutation run.
+//
+// It exists because the suite's own pass criterion makes the headline number
+// weaker than it looks. `survivors = 0` is the condition for the run to succeed,
+// so every committed mutant is by construction something the grader must kill.
+// When a defensible alternative reading of a task is committed as a mutant, its
+// death is recorded as a discrimination success — which means the procedure can
+// convert an oracle-validity defect into evidence of oracle quality. ProofFence
+// v0.2 scored 78 killed / 0 survivors and an independent blind audit of the same
+// artifact then found 20 of 138 fixtures underspecified, four of them matching
+// committed mutants exactly.
+const mutationCaveat = `A killed mutant shows this grader is sensitive to that mutant. It does not show
+the grader is correct. Every committed mutant is by construction something the
+suite requires to die, so a defensible alternative reading committed as a mutant
+has its rejection scored as a discrimination success. Oracle validity is
+established by independent specification audit, not by this number.`
+
 // MutationSuite runs every committed mutant for every case and reports any
-// survivor. A surviving mutant means a grader does not actually discriminate the
-// behaviour the case claims to measure.
+// survivor, together with the recorded kind of each mutant.
+//
+// A surviving mutant means the grader does not discriminate the behaviour the
+// case claims to measure. The converse does not hold: see mutationCaveat.
 func MutationSuite(root string, w io.Writer) error {
 	cases, err := LoadCases(root)
 	if err != nil {
@@ -816,14 +957,27 @@ func MutationSuite(root string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "[proof-fence CONTROLLER] mutation toolchain=%q\n", tc.String())
 	var survivors []string
+	var unclassified []string
 	total := 0
+	byKind := map[string]int{}
 	for _, c := range cases {
 		names, err := LoadMutantNames(root, c)
 		if err != nil {
 			return err
 		}
+		mc, err := LoadMutantClassification(root, c)
+		if err != nil {
+			return err
+		}
 		for _, n := range names {
 			total++
+			kind := "UNCLASSIFIED"
+			if note, ok := mc.Mutants[n]; ok && note.Kind != "" {
+				kind = note.Kind
+			} else {
+				unclassified = append(unclassified, c.ID+"/"+n)
+			}
+			byKind[kind]++
 			mr, err := GradeMutant(root, c, n)
 			if err != nil {
 				return err
@@ -833,10 +987,31 @@ func MutationSuite(root string, w io.Writer) error {
 				status = "SURVIVED"
 				survivors = append(survivors, c.ID+"/"+n)
 			}
-			fmt.Fprintf(w, "[proof-fence CONTROLLER] %s mutant=%s verdict=%s %s\n", c.ID, n, mr.Verdict, status)
+			fmt.Fprintf(w, "[proof-fence CONTROLLER] %s mutant=%s kind=%s verdict=%s %s\n",
+				c.ID, n, kind, mr.Verdict, status)
 		}
 	}
-	fmt.Fprintf(w, "[proof-fence CONTROLLER] mutation total=%d survivors=%d\n", total, len(survivors))
+	kinds := make([]string, 0, len(byKind))
+	for k := range byKind {
+		kinds = append(kinds, k)
+	}
+	sort.Strings(kinds)
+	parts := make([]string, 0, len(kinds))
+	for _, k := range kinds {
+		parts = append(parts, fmt.Sprintf("%s=%d", k, byKind[k]))
+	}
+	fmt.Fprintf(w, "[proof-fence CONTROLLER] mutation total=%d killed=%d survivors=%d by_kind=%s\n",
+		total, total-len(survivors), len(survivors), strings.Join(parts, ","))
+	for _, ln := range strings.Split(mutationCaveat, "\n") {
+		fmt.Fprintf(w, "[proof-fence CONTROLLER] mutation-caveat %s\n", ln)
+	}
+	if byKind[MutantAlternativeReading] > 0 {
+		fmt.Fprintf(w, "[proof-fence CONTROLLER] mutation-caveat %d committed mutant(s) are recorded as defensible alternative readings; their deaths are excluded from any claim about grader quality.\n",
+			byKind[MutantAlternativeReading])
+	}
+	if len(unclassified) > 0 {
+		return fmt.Errorf("mutants without a recorded classification: %s", strings.Join(unclassified, ", "))
+	}
 	if len(survivors) > 0 {
 		return fmt.Errorf("mutants survived: %s", strings.Join(survivors, ", "))
 	}

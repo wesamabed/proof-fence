@@ -25,6 +25,9 @@ A `Request` names one `Intent`:
 - `REMOVE` — erase the key from the slot. The workflow issues `REMOVE` only for a
   slot that currently holds a key.
 
+A value outside this set comes from a workflow version this client release does
+not model, and neither precondition above applies to it.
+
 ## Evidence modality 1: the service's own report
 
 `Apply` sends the request to the key service, which returns an `ApplyReport`:
@@ -39,6 +42,12 @@ A `Request` names one `Intent`:
 
   A value outside this set comes from a service version this client release does
   not model.
+
+The service is reporting on its own action, from its own records; it does not
+read the slot. Read together with the preconditions above, a report that the
+service carried out or declined the request amounts to a claim about what the
+slot now holds. But an account a system gives of its own action does not
+establish what is actually stored there.
 
 ## Evidence modality 2: an independent readback
 

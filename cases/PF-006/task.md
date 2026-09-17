@@ -21,6 +21,10 @@ inside the signed payload:
 defined to need evidence for. A gate whose policy names no scope yields an empty
 string here.
 
+The empty string is not a scope identifier. The attestation service issues no
+attestation under it, and a gate whose policy names no scope has not declared
+what evidence it needs.
+
 ## What the helper is for
 
 `AttestationSatisfies(requiredScope, a)` decides whether the gate may treat this

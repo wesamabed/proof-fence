@@ -16,8 +16,11 @@ The registry's `DELETE /images/{id}` call returns an envelope:
   handling the request; otherwise the recorded fault identifier. It is written
   from the recorder's own log, independently of `Result`.
 - `PayloadRetired` — a field of the JSON response body, rendered by the
-  registry's response serializer from the request it accepted. It is not re-read
-  from the registry's storage layer before the response is sent.
+  registry's response serializer from the request it accepted. The serializer
+  sets this field from that accepted retirement, so a retirement the registry
+  accepted renders it `true`. It is not re-read from the registry's storage
+  layer before the response is sent, so it reports what the registry accepted
+  rather than what its storage layer now holds.
 
 Separately, a fleet inventory scanner walks every running instance and every
 launch template in the account and writes one signed scan record:

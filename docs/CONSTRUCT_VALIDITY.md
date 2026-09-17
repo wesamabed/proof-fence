@@ -120,17 +120,36 @@ most combinations of unmodelled enum values are underdetermining. That is a
 property of the enumeration, not of the graders. Grader fixtures, which are what
 score, are distributed as:
 
-| Case | GRANT | RETAIN | REVOKE | QUARANTINE | total |
-|---|---|---|---|---|---|
-| PF-011 | — | 7 | 2 | 7 | 17 |
-| PF-012 | — | 3 | 3 | 13 | 20 |
-| PF-013 | 1 | 2 | 1 | 15 | 24 |
+| Case | GRANT | RETAIN | REVOKE | QUARANTINE | meta | total |
+|---|---|---|---|---|---|---|
+| PF-011 | — | 7 | 2 | 7 | 1 | 17 |
+| PF-012 | — | 4 | 3 | 13 | 1 | 21 |
+| PF-013 | 4 | 4 | 4 | 12 | — | 24 |
 
-PF-013's determinate space is structurally saturated: with two intents and two
-corroborating readback states there are exactly four corroborated combinations,
-and all four are fixtures. PF-011 and PF-012 reach `GRANT` in no state, because
-in both the subject already holds the authority in question; their graders assert
-that `GRANT` is never returned.
+This table is generated, not typed: `go run ./cmd/proof-fence distribution` reads
+each grader's syntax tree and counts the decision each fixture asserts, and
+`TestPublishedDistributionTableMatchesTheGraders` fails if this file and the
+graders disagree. The v0.2 edition of this table was maintained by hand and was
+wrong: it recorded PF-013 as `1 / 2 / 1 / 15` against a stated total of 24, a row
+that sums to 19. The true v0.2 distribution was GRANT 1 / RETAIN 2 / REVOKE 1 /
+QUARANTINE 20.
+
+The `meta` column counts fixtures that assert a property across several evidence
+states rather than pinning one state to one decision — `TestGrantIsNeverCorrectHere`
+in PF-011 and PF-012 — so every row sums to its total.
+
+PF-011 and PF-012 reach `GRANT` in no state, because in both the subject already
+holds the authority in question; their graders assert that `GRANT` is never
+returned.
+
+PF-013's v0.2 distribution was 20 of 24 fixtures on `QUARANTINE`, which made an
+unconditional `QUARANTINE` correct on 83% of the case's fixtures even though the
+committed `always-quarantine` mutant still died. The v0.3 oracle repair described
+in `docs/V0.2_BLIND_ORACLE_AUDIT.md` moved eight of those fixtures onto
+determinate decisions, and the case now spreads 4/4/4/12. A distribution this
+skewed is worth watching in any four-valued case: the degenerate-strategy mutant
+checks that a constant answer fails *somewhere*, which is a much weaker property
+than the fixture set being balanced enough to measure discrimination.
 
 ## Public pilot versus held-out confirmatory
 
@@ -158,4 +177,7 @@ What that means in practice:
 - No comparative novelty claim relative to the academic or industry literature.
   A prior-art review has not been done.
 - No inference from benchmark performance to production security.
-- No model ranking. No baseline or model evaluation has been run against v0.2.
+- No model ranking, and no capability claim. No confirmatory evaluation has been
+  run. One exploratory instrument-validation pass was graded on 2026-09-17 whose
+  run record carried no model provenance; it is cited only as evidence about the
+  apparatus, never about a model.

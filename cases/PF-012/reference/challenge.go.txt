@@ -44,8 +44,14 @@ type Observation struct {
 // something else supports neither keeping nor removing this grant -- not even
 // when it reports non-compliance, because the non-compliance it reports is not
 // this configuration's.
+//
+// Subject identifiers are opaque and compared literally, so no identifier value
+// is special: a request and an observation that name the same empty string name
+// the same subject. Generations are different, because the task states that
+// generation numbers start at 1, which makes a generation below 1 a value the
+// scheme does not contain.
 func AuthorityDecision(req ChangeRequest, obs Observation) Decision {
-	if req.Subject == "" || req.Generation < 1 {
+	if req.Generation < 1 {
 		return Quarantine
 	}
 	if !obs.Present || !obs.Verified {

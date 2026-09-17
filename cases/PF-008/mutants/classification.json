@@ -1,0 +1,49 @@
+{
+  "schema_version": "proof-fence/mutant-classification/v1",
+  "case_id": "PF-008",
+  "classification_is_adjudicated": true,
+  "note": "Classification is a recorded semantic judgment, not a computed property. ProofFence does not and cannot decide by code whether an implementation is a defensible reading of a task; that requires reading the task and the grader and judging what the text entails. These entries are data a reviewer wrote and a reviewer must maintain. A mutant's death is evidence about the grader only to the extent that the mutant really is wrong under the published semantics.",
+  "kinds": {
+    "degenerate-strategy": "Returns a constant answer. Killing it shows the grader rejects a fixed reply.",
+    "mutation": "A perturbation that is wrong under the published semantics. Killing it shows the grader discriminates that axis.",
+    "alternative-reading-probe": "A reading a competent reader could defend from the published text at this version. Killing it is NOT evidence of grader quality: it records that the grader enforces one of two defensible readings, which is an oracle-validity defect, not a discrimination success."
+  },
+  "mutants": {
+    "always-false": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "always-true": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "count-sign-check": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "ignores-recorded-fault": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "inventory-only": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "not-denied-check": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "registry-envelope-only": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "unattributable-scan-accepted": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "zero-count-without-scan": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    }
+  }
+}

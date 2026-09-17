@@ -17,9 +17,12 @@ Separately, the gate supervises the test process from outside it. It consumes th
 process's structured test-event stream as events are emitted and records
 `SupervisorRan` (names it observed a test-start event for) and `SupervisorPassed`
 (names it observed a success event for). The supervisor appends only events it
-observed itself, as they arrived. The two supervisor lists accumulate
-independently, so a truncated or dropped stream can leave them inconsistent with
-each other.
+observed itself, as they arrived. A test that starts emits a start event, and a
+test that then succeeds emits a success event, so a complete stream names every
+passing test in both lists. The two supervisor lists accumulate independently, so
+a truncated or dropped stream can leave them inconsistent with each other: a name
+in one list and not the other is the signature of an incomplete stream, not of a
+test that behaved unusually.
 
 Either source may name tests that are not in `required`: repositories run more
 tests than any one gate requires. Test names are compared literally, and

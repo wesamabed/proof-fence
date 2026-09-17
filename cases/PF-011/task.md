@@ -43,13 +43,20 @@ both returned.
 `ListRemaining` returns one *page* of the objects still in the workspace, as a
 `ResiduePage`:
 
-- `Retrieved` — a page came back from the listing call.
+- `Retrieved` — a page came back from the listing call. When it is false no page
+  came back and the other two fields are not populated.
 - `Items` — the object keys in **this page**. Pages are bounded in size; the
   service decides how many keys to put in a page and may return a page with no
   keys at all.
 - `NextCursor` — empty when this page is the last page of the enumeration. When
-  it is non-empty it is the cursor for the next page, and it means the service
-  has further results for this workspace that it has not returned yet.
+  it is non-empty it is the cursor for the next page and the enumeration is
+  unfinished: the service has more of this workspace left to return. Because a
+  page may name no keys at all, a continuation cursor does not say whether any
+  further page would name an object.
+
+A page is evidence of exactly what it names. It establishes that the keys it
+lists are still in the workspace, and it establishes nothing about the objects
+the rest of the enumeration would or would not name.
 
 The purge report and the listing page are assembled by separate steps of the
 job's evidence loader and are handed to your function without being reconciled.
