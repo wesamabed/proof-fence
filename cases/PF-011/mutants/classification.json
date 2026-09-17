@@ -1,0 +1,61 @@
+{
+  "schema_version": "proof-fence/mutant-classification/v1",
+  "case_id": "PF-011",
+  "classification_is_adjudicated": true,
+  "note": "Classification is a recorded semantic judgment, not a computed property. ProofFence does not and cannot decide by code whether an implementation is a defensible reading of a task; that requires reading the task and the grader and judging what the text entails. These entries are data a reviewer wrote and a reviewer must maintain. A mutant's death is evidence about the grader only to the extent that the mutant really is wrong under the published semantics.",
+  "kinds": {
+    "degenerate-strategy": "Returns a constant answer. Killing it shows the grader rejects a fixed reply.",
+    "mutation": "A perturbation that is wrong under the published semantics. Killing it shows the grader discriminates that axis.",
+    "alternative-reading-probe": "A reading a competent reader could defend from the published text at this version. Killing it is NOT evidence of grader quality: it records that the grader enforces one of two defensible readings, which is an oracle-validity defect, not a discrimination success."
+  },
+  "mutants": {
+    "always-grant": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "always-quarantine": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "always-retain": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "always-revoke": {
+      "kind": "degenerate-strategy",
+      "note": "Returns one constant answer regardless of input; it demonstrates that the grader is not satisfied by a fixed reply."
+    },
+    "declined-purge-quarantined": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "ignores-continuation-cursor": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "missing-listing-as-empty": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "page-emptiness-only": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    },
+    "residue-quarantined": {
+      "kind": "mutation",
+      "note": "Wrong under the v0.3 published semantics.",
+      "history": [
+        {
+          "version": "v0.2",
+          "kind": "alternative-reading-probe",
+          "source": "v0.2 blind oracle audit, frozen 2026-09-17 before any pilot forensics",
+          "note": "At v0.2 QUARANTINE's only public gloss ('does not support a safe final authority transition') over-triggered, because the task itself defined RETAIN as non-final. v0.3 materializes the generic vocabulary in which RETAIN is an affirmative conclusion and QUARANTINE is the absence of one, which removes the alternative reading."
+        }
+      ]
+    },
+    "unmodelled-status-as-completed": {
+      "kind": "mutation",
+      "note": "Wrong under the published semantics."
+    }
+  }
+}
